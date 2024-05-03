@@ -15,12 +15,9 @@ import os
 app = Flask(__name__)
 
 # Configurations
-app.config["MONGO_URI"] = config.MONGO_URI  # MongoDB URI
-app.config["SECRET_KEY"] = config.SECRET_KEY  # Secret key for session management
+app.config["MONGO_URI"] = config.MONGO_URI
+app.config["SECRET_KEY"] = config.SECRET_KEY
 jwt = JWTManager(app)
-
-# print(config.MONGO_URI)
-# print(config.SECRET_KEY)
 
 # Initialize PyMongo
 mongo = PyMongo(app)
@@ -28,20 +25,7 @@ CORS(app)
 
 
 def start_scheduler():
-    # nasdaq_script_path = 'C:\\Users\\Kingi\\Ohjelmointi\\Github\\projektit\\Markkinauutiset_ChatGPT\\backend\\apicalls\\nasdaqApiCall.py'
-    # sys.path.insert(0, 'C:\\Users\\Kingi\\Ohjelmointi\\Github\\projektit\\Markkinauutiset_ChatGPT')
-    print("Before changing directory:", os.getcwd())
-    # os.chdir('C:\\Users\\Kingi\\Ohjelmointi\\Github\\projektit\\Markkinauutiset_ChatGPT')
-    # print("After changing directory:", os.getcwd())
-    
-    # env = os.environ.copy()
-    # env['PYTHONPATH'] = 'C:\\Users\\Kingi\\Ohjelmointi\\Github\\projektit\\Markkinauutiset_ChatGPT\\backend'
-    
-    # Start nasdaqApiCall.py as a background process
-    # subprocess.Popen(['python', nasdaq_script_path])
     subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
-    # subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'], env=env)
-
     
 
 @app.route('/')
@@ -146,7 +130,6 @@ def get_favorites():
         # Convert ObjectIds in the favorites_info to strings
         for favorite in favorites_info:
             favorite['_id'] = str(favorite['_id'])
-        # print('Favorites Info:', favorites_info)  # debug
         return jsonify(favorites_info)
     else:
         return jsonify({"error": "User not found"}), 404
@@ -239,7 +222,6 @@ def get_news_with_analysis():
         query = {}
 
     # Apply the query, sorting, pagination, and conversion to a list
-    # news_items = mongo.db.news.find(query).sort(sort_field, sort_direction).skip(skip).limit(limit)
     news_items = list(mongo.db.news.find(query).sort([
         ('releaseTime', -1), 
         ("company", 1), 
@@ -284,6 +266,8 @@ def get_logged_in_user():
 
 if __name__ == '__main__':
     start_scheduler()
-    app.run(debug=True, use_reloader=False)
     
-    # app.run(debug=True)
+    # Only start the Flask development server if not in production
+    if os.getenv('FLASK_ENV') != 'production':
+        app.run(debug=True, use_reloader=False)
+        # app.run(debug=True)
