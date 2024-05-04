@@ -35,6 +35,9 @@ logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
 
+logging.info("Application is starting...")
+
+
 def start_scheduler():
     subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
     
