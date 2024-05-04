@@ -9,7 +9,8 @@ function FavoritesPage() {
   
   useEffect(() => {
     // Fetch the user's current favorites directly with detailed information
-    axios.get('http://localhost:5000/api/favorites', {
+    // axios.get('http://localhost:5000/api/favorites', {
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -29,7 +30,7 @@ function FavoritesPage() {
     // Update the local state with remaining full stock objects for rendering
     setFavorites(favorites.filter(stock => stock._id !== stockToRemove._id));
     // Update favorites in the backend with remaining stock IDs
-    axios.post('http://localhost:5000/api/favorites', { favorites: updatedFavoritesIds }, {
+    axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, { favorites: updatedFavoritesIds }, {
         headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'

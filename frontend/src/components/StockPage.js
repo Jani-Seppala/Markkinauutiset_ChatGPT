@@ -17,19 +17,14 @@ function StockPage() {
   useEffect(() => {
     const fetchStockData = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/stocks/${stockId}`);
+        // const response = await axios.get(`http://localhost:5000/api/stocks/${stockId}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/stocks/${stockId}`);
         console.log('Stock Response:', response); // Debug print
         setStockData(response.data);
   
-        // const newsResponse = await axios.get(`http://localhost:5000/api/news-with-analysis?stock_id=${stockId}`);
-        // console.log('News Response:', newsResponse); // Debug print
-        // // console.log('News Data:', newsResponse.data);
-        // console.log('News Data:', newsResponse.data.items);
-        // // setNewsData(newsResponse.data);
-        // setNewsData(newsResponse.data.items);
-  
         if (token) {
-          const favoritesResponse = await axios.get('http://localhost:5000/api/favorites', {
+          // const favoritesResponse = await axios.get('http://localhost:5000/api/favorites', {
+          const favoritesResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -53,7 +48,8 @@ function StockPage() {
     const userId = localStorage.getItem('userId');
     if (!favorites.includes(stockToAdd._id)) {
       
-      axios.post(`http://localhost:5000/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
+      // axios.post(`http://localhost:5000/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
+      axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -71,7 +67,8 @@ function StockPage() {
     const updatedFavorites = favorites.filter(favoriteId => favoriteId !== stockId);
     setFavorites(updatedFavorites);
     console.log('Favorites after removing:', updatedFavorites);
-    axios.post('http://localhost:5000/api/favorites', { favorites: updatedFavorites }, {
+    // axios.post('http://localhost:5000/api/favorites', { favorites: updatedFavorites }, {
+    axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, { favorites: updatedFavorites }, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -88,34 +85,6 @@ function StockPage() {
   const isFavorite = favorites.includes(stockId);
   console.log('Is Favorite:', isFavorite);
 
-//   return (
-//     <div>
-//       <h2>Stock Details</h2>
-//       {stockData ? (
-//         <div className="d-flex justify-content-between align-items-center">
-//           <h3>{stockData.name} ({stockData.symbol})</h3>
-//           {token && (
-//             <button className={`btn ${isFavorite ? 'btn-danger' : 'btn-primary'}`} onClick={() => isFavorite ? handleRemoveFromFavorites() : handleAddToFavorites(stockData)}>
-//               {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
-//             </button>
-//           )}
-//         </div>
-//       ) : (
-//         <p>Stock information not available.</p>
-//       )}
-//       {newsData.length > 0 ? (
-//         newsData.map(({ news, analysis }) => {
-//           const keyId = news._id.$oid || news._id;
-//           return <NewsItem key={keyId} news={news} analysis={analysis} />;
-//         })
-//       ) : (
-//         <p>This company doesn't have news/analysis.</p>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default StockPage;
 
 return (
   <div>

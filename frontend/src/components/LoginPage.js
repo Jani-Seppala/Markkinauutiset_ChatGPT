@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../components/UserContext';
@@ -18,7 +18,8 @@ function LoginPage() {
     e.preventDefault();
 
   try {
-    const response = await axios.post('http://localhost:5000/api/users/login', { email, password });
+    // const response = await axios.post('http://localhost:5000/api/users/login', { email, password });
+    const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/users/login`, { email, password });
     if (response.data.success) {
       console.log('Login successful:', response.data);
       localStorage.setItem('token', response.data.token);

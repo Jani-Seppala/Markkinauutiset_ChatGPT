@@ -13,7 +13,8 @@ function SearchBar() {
 
   useEffect(() => {
     if (searchTerm) {
-      axios.get(`http://localhost:5000/api/stocks?query=${searchTerm}`)
+      // axios.get(`http://localhost:5000/api/stocks?query=${searchTerm}`)
+      axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/stocks?query=${searchTerm}`)
         .then(response => setSearchResults(response.data))
         .catch(error => console.error('Failed to fetch stocks:', error));
     } else {

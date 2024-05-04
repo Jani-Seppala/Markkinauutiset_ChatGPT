@@ -249,8 +249,6 @@ def get_news_with_analysis():
     return app.response_class(response=result_json, mimetype='application/json')
 
 
-
-
 @app.route('/api/users/me', methods=['GET'])
 @jwt_required()
 def get_logged_in_user():

@@ -13,7 +13,8 @@ function NewsAndAnalysis({ stockIds, token }) {
 
     const fetchNews = useCallback((currentPage, reset = false) => {
         setLoading(true);
-        const baseUrl = 'http://localhost:5000/api/news-with-analysis';
+        // const baseUrl = 'http://localhost:5000/api/news-with-analysis';
+        const baseUrl = `${process.env.REACT_APP_API_BASE_URL}/api/news-with-analysis`;
         const params = new URLSearchParams({
             page: currentPage
         });
@@ -28,8 +29,6 @@ function NewsAndAnalysis({ stockIds, token }) {
                 'Content-Type': 'application/json'
             }
         }).then(response => {
-          console.log('Current state before update:', newsWithAnalysis.map(item => item.news._id));
-          console.log('New items to add:', response.data.items.map(item => item.news._id));
             if (reset) {
                 setNewsWithAnalysis(response.data.items);
             } else {
