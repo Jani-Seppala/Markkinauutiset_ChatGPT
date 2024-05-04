@@ -30,17 +30,9 @@ mongo = PyMongo(app)
 CORS(app)
 
 
-
 # Basic configuration for logging
 logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more verbose output
                     format='%(asctime)s:%(levelname)s:%(message)s')
-
-# if not os.path.exists('logs'):
-#     os.makedirs('logs')
-# file_handler = ConcurrentRotatingFileHandler('logs/myapp.log', "a", maxBytes=10240, backupCount=10)
-# file_handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(message)s'))
-# logging.getLogger().addHandler(file_handler)
-
 
 
 def start_scheduler():
@@ -282,7 +274,6 @@ def get_logged_in_user():
     
 
 if __name__ == '__main__':
-    # setup_logging()
     start_scheduler()
     
     # Only start the Flask development server if not in production
