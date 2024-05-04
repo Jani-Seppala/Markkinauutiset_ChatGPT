@@ -6,6 +6,7 @@ from uuid import uuid4
 from bs4 import BeautifulSoup
 from app import mongo
 import re
+import os
 import schedule
 from .YahooFinanceApiCall import main as fetch_stock_data
 from .openAiApiCall import analyze_news
@@ -154,8 +155,6 @@ def fetch_stock_price_and_analyze(news_item):
                 print(f"Error fetching stock data: {e} for {news_item.get('stock_symbol')}")
                 return
             
-    
-    
     # news_item['price_before_news'] = price_before_news
     # mongo.db.news.insert_one(news_item)
     
@@ -170,7 +169,12 @@ def fetch_stock_price_and_analyze(news_item):
     
     # Get analysis from the news with the stock price from openAiApiCall.py
     # analysis_content, prompt = analyze_news(news_item, price_before_news, close_prices)
-    analysis_content, prompt = analyze_news(news_item, stock_info)
+    if os.environ.get('FLASK_ENV') == 'production':
+        analysis_content, prompt = analyze_news(news_item, stock_info)
+    else:
+        analysis_content = "This is static analysis content for testing."
+        prompt = "Static prompt for testing."
+        
     analysis_document = {
         "news_id": news_item["_id"],
         "analysis_content": analysis_content,
@@ -178,21 +182,7 @@ def fetch_stock_price_and_analyze(news_item):
         "prompt": prompt
     }
     
-    # Use static content for analysis
-    # analysis_content = "This is static analysis content for testing."
-    # prompt = "Static prompt for testing."
-
-    # analysis_document = {
-    #     "news_id": news_item["_id"],
-    #     "analysis_content": analysis_content,
-    #     "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
-    #     "prompt": prompt
-    # }
-    
-    
     mongo.db.analysis.insert_one(analysis_document)
-    # print(analysis_document)
-    # print(news_item)
     print(f"Saved news and analysis for {news_item.get('stock_symbol')}")
     print('-----------------------------NEXT NEWS ITEM----------------------------------------')
 
@@ -278,10 +268,6 @@ def check_and_reschedule():
     # Clear any existing schedules regardless of the time or day
     schedule.clear()
 
-    # if weekday < 5 and 7 <= hour < 18:
-    #     schedule.every().minute.at(":05").do(market_hours_job)
-    # else:
-    #     schedule.every(15).minutes.do(off_market_hours_job)
     if weekday < 5 and 7 <= hour < 18:  # During market hours
         job = schedule.every().minute.at(":05").do(market_hours_job)
         print_next_fetch_time(job)

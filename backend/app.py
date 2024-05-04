@@ -5,19 +5,22 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 from bson import json_util
 from datetime import timedelta
-# import bson.json_util
 import bcrypt
-import config
 import subprocess
 import sys
 import os
 
 app = Flask(__name__)
 
-# Configurations
-app.config["MONGO_URI"] = config.MONGO_URI
-app.config["SECRET_KEY"] = config.SECRET_KEY
-jwt = JWTManager(app)
+if os.environ.get('FLASK_ENV') == 'production':
+    app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_PROD')
+else:
+    app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_DEV')
+
+app.config["SECRET_KEY"] = os.environ.get('FLASK_SECRET_KEY')
+if not app.config["SECRET_KEY"]:
+    raise RuntimeError("FLASK_SECRET_KEY is not set")
+
 
 # Initialize PyMongo
 mongo = PyMongo(app)
@@ -200,7 +203,7 @@ def get_news_with_analysis():
     stock_id = request.args.get('stock_id')
     stock_ids = request.args.get('stock_ids')
     page = int(request.args.get('page', 1))
-    limit = 10
+    limit = 15
     actual_fetch_limit = limit + 1
     # Adjust the skip to account for the extra news item
     skip = (page - 1) * limit
