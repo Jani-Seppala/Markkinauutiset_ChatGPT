@@ -36,6 +36,7 @@ logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more
 
 
 logging.info("Application is starting...")
+logging.info(f"Environment: {os.getenv('FLASK_ENV')}")
 
 
 def start_scheduler():
