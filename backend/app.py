@@ -278,9 +278,8 @@ def get_logged_in_user():
     
 
 if os.environ.get('FLASK_ENV') == 'production':
-    if os.getppid() == 1:  # Check if the parent process is the init process
-        logging.info("FLASK_ENV is production, starting scheduler...")
-        start_scheduler()  # Start scheduler when in production
+    logging.info("FLASK_ENV is production, starting scheduler...")
+    start_scheduler()  # Start scheduler when in production
 
 if __name__ == '__main__':
     logging.info("__name__ is main, starting scheduler...")
