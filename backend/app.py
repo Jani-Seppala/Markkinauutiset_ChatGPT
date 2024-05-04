@@ -21,6 +21,7 @@ app.config["SECRET_KEY"] = os.environ.get('FLASK_SECRET_KEY')
 if not app.config["SECRET_KEY"]:
     raise RuntimeError("FLASK_SECRET_KEY is not set")
 
+jwt = JWTManager(app)
 
 # Initialize PyMongo
 mongo = PyMongo(app)
