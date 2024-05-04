@@ -281,5 +281,6 @@ if __name__ == '__main__':
     
     # Only start the Flask development server if not in production
     if os.getenv('FLASK_ENV') != 'production':
+        logging.info("mainissa ollaan...")
         app.run(debug=True, use_reloader=False)
         # app.run(debug=True)
