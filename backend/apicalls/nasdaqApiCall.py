@@ -12,6 +12,28 @@ import logging
 from .YahooFinanceApiCall import main as fetch_stock_data
 from .openAiApiCall import analyze_news
 
+from logging.config import dictConfig
+
+logging_config = dict(
+    version = 1,
+    formatters = {
+        'f': {'format':
+              '%(asctime)s:%(levelname)s:%(message)s'}
+        },
+    handlers = {
+        'h': {'class': 'logging.StreamHandler',
+              'formatter': 'f',
+              'level': logging.INFO}
+        },
+    root = {
+        'handlers': ['h'],
+        'level': logging.INFO,
+    },
+)
+
+dictConfig(logging_config)
+logging.info("Nasdaq API Call Module is starting...")
+
 
 logging.info('Starting nasdaqApiCall.py')
 
