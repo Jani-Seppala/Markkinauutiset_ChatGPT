@@ -8,24 +8,25 @@ from app import mongo
 import re
 import os
 import schedule
+import logging
 from .YahooFinanceApiCall import main as fetch_stock_data
 from .openAiApiCall import analyze_news
 
-print('fsfs')
 
+logging.info('Starting nasdaqApiCall.py')
 
 def fetch_news(url):
     """ Fetch news from a given URL and process it if successful. """
     response = requests.get(url)
     if response.status_code == 200:
-        print(f"News fetched successfully.at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')} from {url}")
+        logging.info(f"News fetched successfully.at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')} from {url}")
         news_data = response.json().get('results', {}).get('item', [])
         # preprocess_news_items(news_data[:3])  # Process only the first 2 news item
         preprocess_news_items(news_data)
         # exit(0)  # Exit after processing the first item
         return
     else:
-        print(f"Failed to fetch news: {response.status_code}")
+        logging.info(f"Failed to fetch news: {response.status_code}")
 
 
 def extract_manager_name(headline):
@@ -79,8 +80,7 @@ def link_related_news(grouped_news):
     linked_news = {}
     for key, items in grouped_news.items():
         if len(items) <= 2:
-            # print('LINK RELATED NEWS ENSIMMÄINEN IF', items)
-            print('LINK RELATED NEWS ENSIMMÄINEN IF')
+            # print('LINK RELATED NEWS ENSIMMÄINEN IF')
             # Directly link items if there are 2 or fewer in the group.
             # direct_link_key = key + ('DirectLink',)
             # linked_news[direct_link_key] = {'relatedId': str(uuid4()), 'items': items}
@@ -139,8 +139,8 @@ def fetch_stock_price_and_analyze(news_item):
     # Check if data is in cache
     if cache_key in price_cache:
         price_before_news, close_prices = price_cache[cache_key]
-        print("Using cached price data.")
-        print(f"{price_cache=}")
+        logging.info("Using cached price data.")
+        logging.info(f"{price_cache=}")
     else:
         try:
             # Fetch stock price from YahooFinanceApicall.py
@@ -150,9 +150,9 @@ def fetch_stock_price_and_analyze(news_item):
             stock_info = fetch_stock_data(news_item)
                 # Store in cache
             price_cache[cache_key] = stock_info
-            print("Fetched new price data and cached it.")
+            logging.info("Fetched new price data and cached it.")
         except Exception as e:
-                print(f"Error fetching stock data: {e} for {news_item.get('stock_symbol')}")
+                logging.info(f"Error fetching stock data: {e} for {news_item.get('stock_symbol')}")
                 return
             
     # news_item['price_before_news'] = price_before_news
@@ -161,7 +161,7 @@ def fetch_stock_price_and_analyze(news_item):
     if 'price_before_news' in stock_info:
         news_item['price_before_news'] = stock_info['price_before_news']
     else:
-        print("Price before news not found in stock info.")
+        logging.info("Price before news not found in stock info.")
         return
 
     # Save news item in MongoDB
@@ -183,8 +183,8 @@ def fetch_stock_price_and_analyze(news_item):
     }
     
     mongo.db.analysis.insert_one(analysis_document)
-    print(f"Saved news and analysis for {news_item.get('stock_symbol')}")
-    print('-----------------------------NEXT NEWS ITEM----------------------------------------')
+    logging.info(f"Saved news and analysis for {news_item.get('stock_symbol')}")
+    logging.info('-----------------------------NEXT NEWS ITEM----------------------------------------')
 
 
 def process_and_save_news(linked_news):
@@ -196,13 +196,13 @@ def process_and_save_news(linked_news):
             
             # Check for language and market requirements
             if item['language'] != 'fi' or (item['market'] not in ["Main Market, Helsinki", "First North Finland"]):
-                print(f"Skipping news item with ID {unique_id} due to language/market mismatch.")
+                logging.info(f"Skipping news item with ID {unique_id} due to language/market mismatch.")
                 continue
             
             # Check for existing item in both news and unmatched_news collections
             existing_news_item = mongo.db.news.find_one({'disclosureId': unique_id})
             existing_unmatched_item = mongo.db.unmatched_news.find_one({'disclosureId': unique_id})
-            print(f"Checking for existing item with ID {unique_id}: Found in news - {existing_news_item is not None}, Found in unmatched_news - {existing_unmatched_item is not None}")
+            logging.info(f"Checking for existing item with ID {unique_id}: Found in news - {existing_news_item is not None}, Found in unmatched_news - {existing_unmatched_item is not None}")
 
             if not existing_news_item and not existing_unmatched_item:
                 item_text = fetch_text_from_url(item['messageUrl'])
@@ -214,15 +214,15 @@ def process_and_save_news(linked_news):
                 if stock:
                     item['stock_id'] = stock['_id']
                     item['stock_symbol'] = stock.get('symbol', 'N/A')  # Add the stock symbol to the news item
-                    print(f"Matched '{item.get('company')}' with stock '{stock['name']}'")
+                    logging.info(f"Matched '{item.get('company')}' with stock '{stock['name']}'")
                     fetch_stock_price_and_analyze(item)
                 else:
-                    print(f"Could not find a match for news item company name '{item.get('company')}' in market '{item.get('market')}'; saved for manual review.")
+                    logging.info(f"Could not find a match for news item company name '{item.get('company')}' in market '{item.get('market')}'; saved for manual review.")
                     item['review_needed'] = True
                     mongo.db.unmatched_news.insert_one(item)
 
             elif existing_news_item or existing_unmatched_item:
-                print(f"News item with disclosureId '{unique_id}' already exists in the database. Company '{item.get('company')}'")
+                logging.info(f"News item with disclosureId '{unique_id}' already exists in the database. Company '{item.get('company')}'")
 
 
 
@@ -236,17 +236,17 @@ def fetch_text_from_url(url):
             all_text = " ".join(element.get_text(strip=True) for element in text_elements)
             return all_text
         else:
-            print("Failed to retrieve the webpage")
+            logging.info("Failed to retrieve the webpage")
             return None
     except Exception as e:
-        print(f"Error fetching page content: {e}")
+        logging.info(f"Error fetching page content: {e}")
         return None
 
 
 def market_hours_job():
     global price_cache
     price_cache = {}  # Reset the cache at the start of each job
-    print(f"Scheduled job during market hours at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')}")
+    logging.info(f"Scheduled job during market hours at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')}")
     fetch_news(main_market_url)
     fetch_news(first_north_url)
     check_and_reschedule()
@@ -254,7 +254,7 @@ def market_hours_job():
 def off_market_hours_job():
     global price_cache
     price_cache = {}  # Reset the cache at the start of each job
-    print(f"Scheduled job outside market hours at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')}")
+    logging.info(f"Scheduled job outside market hours at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')}")
     fetch_news(main_market_url)
     fetch_news(first_north_url)
     check_and_reschedule()
@@ -272,14 +272,14 @@ def check_and_reschedule():
         job = schedule.every().minute.at(":05").do(market_hours_job)
         print_next_fetch_time(job)
     else:  # Outside market hours
-        job = schedule.every(15).minutes.do(off_market_hours_job)
+        job = schedule.every(5).minutes.do(off_market_hours_job)
         print_next_fetch_time(job)
 
 
 def print_next_fetch_time(job):
     # Get the next scheduled run time from the job
     next_run = job.next_run
-    print(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+    logging.info(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 main_market_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicMainMarkets&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
@@ -292,4 +292,4 @@ try:
         schedule.run_pending()
         time.sleep(1)
 except KeyboardInterrupt:
-    print("Stopped by user.")
+    logging.info("Stopped by user.")

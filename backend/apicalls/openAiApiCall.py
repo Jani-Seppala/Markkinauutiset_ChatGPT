@@ -1,6 +1,7 @@
 from openai import OpenAI
 import tiktoken
 import os
+import logging
 
 client = OpenAI()
 
@@ -15,7 +16,7 @@ def load_prompt():
             with open('prompt.txt', 'r') as file:
                 prompt = file.read()
         except FileNotFoundError:
-            print("Prompt file not found and no environment variable set. Using default prompt.")
+            logging.warning("Prompt file not found and no environment variable set. Using default prompt.")
             prompt = f"An error occurred: {str(FileNotFoundError)}"
     
     return prompt
@@ -28,7 +29,7 @@ def analyze_news(news_item, stock_info):
         
         PROMPT = load_prompt()
         if not PROMPT:
-            print("Failed to load prompt. Skipping news item analysis.")
+            logging.warning("Failed to load prompt. Skipping news item analysis.")
             return "Failed to load prompt.", None
         if 'messageUrlContent' not in news_item:
             return ("Error: 'messageUrlContent' not found in news_item", PROMPT)
@@ -44,7 +45,7 @@ def analyze_news(news_item, stock_info):
             return (f"Error: The prompt is too long ({number_of_tokens} tokens, exceeds {max_tokens} tokens).", prompt)
             
         
-        print(f"Prompt contains {number_of_tokens} tokens in openAiApiCall.py")
+        logging.info(f"Prompt contains {number_of_tokens} tokens in openAiApiCall.py")
     
         completion = client.chat.completions.create(
             # model="gpt-3.5-turbo",
@@ -70,5 +71,5 @@ def num_tokens_from_string(string: str, encoding_name: str) -> int:
         num_tokens = len(encoding.encode(string))
         return num_tokens
     except Exception as e:
-        print(f"Error calculating tokens: {str(e)}")
+        logging.warning(f"Error calculating tokens: {str(e)}")
         return -1  # Return -1 or another indicator for error in token calculation
