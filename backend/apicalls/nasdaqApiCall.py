@@ -272,7 +272,7 @@ def check_and_reschedule():
         job = schedule.every().minute.at(":05").do(market_hours_job)
         print_next_fetch_time(job)
     else:  # Outside market hours
-        job = schedule.every(5).minutes.do(off_market_hours_job)
+        job = schedule.every(15).minutes.do(off_market_hours_job)
         print_next_fetch_time(job)
 
 
