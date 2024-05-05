@@ -16,7 +16,7 @@ function FavoritesPage() {
       }
     })
     .then(response => {
-      console.log('Fetched favorites:', response.data);
+      // console.log('Fetched favorites:', response.data);
       setFavorites(response.data);
     })
     .catch(error => {

@@ -12,14 +12,13 @@ function StockPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const token = localStorage.getItem('token');
-  console.log(token);
 
   useEffect(() => {
     const fetchStockData = async () => {
       try {
         // const response = await axios.get(`http://localhost:5000/api/stocks/${stockId}`);
         const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/stocks/${stockId}`);
-        console.log('Stock Response:', response); // Debug print
+        // console.log('Stock Response:', response); // Debug print
         setStockData(response.data);
   
         if (token) {
@@ -29,12 +28,12 @@ function StockPage() {
               Authorization: `Bearer ${token}`
             }
           });
-          console.log('Favorites Response:', favoritesResponse.data);
+          // console.log('Favorites Response:', favoritesResponse.data);
           setFavorites(favoritesResponse.data.map(stock => stock._id));
         }
         setLoading(false);
       } catch (err) {
-        console.error('Error:', err); // Debug print
+        // console.error('Error:', err); // Debug print
         setError('Failed to fetch data');
         setLoading(false);
       }
@@ -80,10 +79,10 @@ function StockPage() {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
-  console.log('Favorites:', favorites);
-  console.log('Stock ID:', stockId);
+  // console.log('Favorites:', favorites);
+  // console.log('Stock ID:', stockId);
   const isFavorite = favorites.includes(stockId);
-  console.log('Is Favorite:', isFavorite);
+  // console.log('Is Favorite:', isFavorite);
 
 
 return (

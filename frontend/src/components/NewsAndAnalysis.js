@@ -15,7 +15,6 @@ function NewsAndAnalysis({ stockIds, token }) {
         setLoading(true);
         // const baseUrl = 'http://localhost:5000/api/news-with-analysis';
         const baseUrl = `${process.env.REACT_APP_API_BASE_URL}/api/news-with-analysis`;
-        console.log('Base URL:', baseUrl);
         const params = new URLSearchParams({
             page: currentPage
         });
@@ -50,7 +49,7 @@ function NewsAndAnalysis({ stockIds, token }) {
     }, [stockIds, token, fetchNews]);
     
 
-    console.log('News item IDs:', newsWithAnalysis.map(({ news }) => news._id));
+    // console.log('News item IDs:', newsWithAnalysis.map(({ news }) => news._id));
 
     return (
         <div className="container">
@@ -67,7 +66,7 @@ function NewsAndAnalysis({ stockIds, token }) {
                     newsWithAnalysis.map(({ news, analysis }, index) => {
                         // Ensure the key is a string. Access the $oid property if _id is an object.
                         const keyId = news._id && news._id.$oid ? news._id.$oid : index.toString();
-                        console.log(`Key for NewsItem ${index}: ${keyId}`); // Check what key is used.
+                        // console.log(`Key for NewsItem ${index}: ${keyId}`); // Check what key is used.
                         return <NewsItem key={keyId} news={news} analysis={analysis} />;
                     })
                 )
