@@ -15,6 +15,7 @@ function NewsAndAnalysis({ stockIds, token }) {
         setLoading(true);
         // const baseUrl = 'http://localhost:5000/api/news-with-analysis';
         const baseUrl = `${process.env.REACT_APP_API_BASE_URL}/api/news-with-analysis`;
+        console.log('Base URL:', baseUrl);
         const params = new URLSearchParams({
             page: currentPage
         });
