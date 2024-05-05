@@ -56,7 +56,7 @@ function StockPage() {
       .then(() => {
         const newFavorites = [...favorites, stockToAdd._id];
         setFavorites(newFavorites);
-        console.log('Favorites after adding:', newFavorites);
+        // console.log('Favorites after adding:', newFavorites);
       })
       .catch(error => console.error("Failed to add stock to favorites", error));
     }
@@ -65,7 +65,7 @@ function StockPage() {
   const handleRemoveFromFavorites = () => {
     const updatedFavorites = favorites.filter(favoriteId => favoriteId !== stockId);
     setFavorites(updatedFavorites);
-    console.log('Favorites after removing:', updatedFavorites);
+    // console.log('Favorites after removing:', updatedFavorites);
     // axios.post('http://localhost:5000/api/favorites', { favorites: updatedFavorites }, {
     axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, { favorites: updatedFavorites }, {
       headers: {
