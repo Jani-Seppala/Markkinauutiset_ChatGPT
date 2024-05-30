@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+// import axios from 'axios';
+import axios from './AxiosSetup'
 // import NewsItem from './NewsItem';
 import NewsAndAnalysis from './NewsAndAnalysis';
 
 function StockPage() {
   const { stockId } = useParams();
   const [stockData, setStockData] = useState(null);
-  // const [newsData, setNewsData] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,13 +17,15 @@ function StockPage() {
     const fetchStockData = async () => {
       try {
         // const response = await axios.get(`http://localhost:5000/api/stocks/${stockId}`);
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/stocks/${stockId}`);
+        // const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/stocks/${stockId}`);
+        const response = await axios.get(`/api/stocks/${stockId}`);
         // console.log('Stock Response:', response); // Debug print
         setStockData(response.data);
   
         if (token) {
           // const favoritesResponse = await axios.get('http://localhost:5000/api/favorites', {
-          const favoritesResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, {
+          // const favoritesResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, {
+          const favoritesResponse = await axios.get(`/api/favorites`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -48,7 +50,8 @@ function StockPage() {
     if (!favorites.includes(stockToAdd._id)) {
       
       // axios.post(`http://localhost:5000/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
-      axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
+      // axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
+      axios.post(`/api/users/${userId}/add_favorite/${stockToAdd._id}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -67,7 +70,8 @@ function StockPage() {
     setFavorites(updatedFavorites);
     // console.log('Favorites after removing:', updatedFavorites);
     // axios.post('http://localhost:5000/api/favorites', { favorites: updatedFavorites }, {
-    axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, { favorites: updatedFavorites }, {
+    // axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, { favorites: updatedFavorites }, {
+    axios.post(`/api/favorites`, { favorites: updatedFavorites }, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -106,3 +110,4 @@ return (
 }
 
 export default StockPage;
+

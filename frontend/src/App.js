@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate} from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import FavoritesPage from './components/FavoritesPage';
@@ -8,16 +8,21 @@ import InfoPage from './components/InfoPage';
 import SearchBar from './components/SearchBar';
 import Logout from './components/Logout';
 import NewsAndAnalysis from './components/NewsAndAnalysis';
+import NotFoundPage from './components/NotFoundPage';
 import { useUser, UserProvider } from './components/UserContext';
 import './App.css';
 
 function App() {
-  const { isLoggedIn, toggleDarkMode, darkMode } = useUser();
+  const { isLoggedIn, toggleDarkMode, darkMode, logout} = useUser();
+  // const { isLoggedIn, toggleDarkMode, darkMode, } = useUser();
   const [logoutCount, setLogoutCount] = useState(0);
 
   const handleLogout = () => {
+    logout();
     setLogoutCount(logoutCount + 1);
   };
+
+
 
   // Apply or remove the dark-mode class on the body element based on the darkMode state
   useEffect(() => {
@@ -28,6 +33,14 @@ function App() {
     }
   }, [darkMode]); // This effect runs whenever darkMode changes
 
+  useEffect(() => {
+    const handleTokenExpiration = () => logout();
+    window.addEventListener('token-expiration', handleTokenExpiration);
+    return () => {
+        window.removeEventListener('token-expiration', handleTokenExpiration);
+    };
+  }, [logout]);
+
     // Determine navbar and button classes based on darkMode
     const navbarClass = darkMode ? "navbar navbar-expand-lg navbar-dark bg-dark" : "navbar navbar-expand-lg navbar-light bg-light";
     const toggleButtonClass = darkMode ? "btn btn-light" : "btn btn-dark";
@@ -35,6 +48,7 @@ function App() {
 
   return (
     <Router>
+      {/* <CheckTokenExpiration /> */}
       <nav className={`${navbarClass} fixed-navbar mb-4`}>
         <div className="container">
           <Link className="navbar-brand fs-2" to="/">News App</Link>
@@ -50,6 +64,7 @@ function App() {
                 <>
                   <li className="nav-item"><Link className="nav-link" to="/favorites">Favorites</Link></li>
                   <li className="nav-item"><Logout onLogout={handleLogout} /></li>
+                  {/* <li className="nav-item"><Logout onLogout={logout} /></li> */}
                 </>
               )}
               <li className="nav-item"><Link className="nav-link" to="/info">Info</Link></li>
@@ -64,12 +79,17 @@ function App() {
       <div className="nav-spacer"></div>
       <div className="container">
         <Routes>
-          <Route path="/" element={<NewsAndAnalysis key={logoutCount} />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<NewsAndAnalysis />} />
+          {/* <Route path="/" element={<NewsAndAnalysis key={logoutCount} />} /> */}
+          {/* <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} /> */}
+          <Route path="/login" element={!isLoggedIn ? <LoginPage /> : <Navigate replace to="/" />} />
+          <Route path="/register" element={!isLoggedIn ? <RegisterPage /> : <Navigate replace to="/" />} />
+          <Route path="/favorites" element={isLoggedIn ? <FavoritesPage /> : <Navigate replace to="/login" />} />
           <Route path="/stocks/:stockId" element={<StockPage />} />
           <Route path="/info" element={<InfoPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </Router>

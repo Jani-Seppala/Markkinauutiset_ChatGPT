@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response, send_from_directory
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from bson.objectid import ObjectId
@@ -12,17 +12,22 @@ import os
 import logging
 # from concurrent_log_handler import ConcurrentRotatingFileHandler
 
-app = Flask(__name__)
+# app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend/build/static', static_url_path='/static')
 
 if os.environ.get('FLASK_ENV') == 'production':
     app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_PROD')
 else:
     app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_DEV')
 
+
 app.config["SECRET_KEY"] = os.environ.get('FLASK_SECRET_KEY')
 if not app.config["SECRET_KEY"]:
     raise RuntimeError("FLASK_SECRET_KEY is not set")
 
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
+# app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=1)
 jwt = JWTManager(app)
 
 # Initialize PyMongo
@@ -43,9 +48,17 @@ def start_scheduler():
     subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
     
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    if path and os.path.exists(os.path.join(app.static_folder, '..', path)):
+        return send_from_directory('frontend/build', path)
+    else:
+        return send_from_directory('frontend/build', 'index.html')
 
 
 @app.route('/api/users/register', methods=['POST'])
@@ -89,7 +102,6 @@ def register_user():
         return jsonify({"success": False, "message": "Email is already registered."})
 
 
-
 @app.route('/api/users/login', methods=['POST'])
 def login():
     users = mongo.db.users
@@ -100,8 +112,7 @@ def login():
         password_check = bcrypt.checkpw(request.json['password'].encode('utf-8'), hashed_password)
         if password_check:
             # Set the token to expire in 1 hour
-            expires = timedelta(hours=1)
-            access_token = create_access_token(identity=str(login_user['_id']), expires_delta=expires)
+            access_token = create_access_token(identity=str(login_user['_id']))
             # Convert the ObjectId to a string before returning the user data
             login_user['_id'] = str(login_user['_id'])
             # Remove the password before returning the user data
@@ -117,17 +128,21 @@ def login():
 @jwt_required()
 def add_favorite(user_id, stock_id):
     if get_jwt_identity() != user_id:
+        logging.error("Attempt to access without valid user id")
         return jsonify({"error": "Unauthorized"}), 403
     user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
     if stock_id in user.get("favorites", []):
+        logging.error(f"Stock is already in the favorites for user {user_id}")
         return jsonify({"message": "Stock is already in favorites"}), 409
     try:
         mongo.db.users.update_one(
             {"_id": ObjectId(user_id)},
             {"$addToSet": {"favorites": stock_id}}
         )
+        logging.info(f"Updated favorites for user {user_id}")
         return jsonify({"message": "Stock added to favorites"}), 200
     except Exception as e:
+        logging.exception("Failed to update favorites due to an error.")
         return jsonify({"error": str(e)}), 500
 
 

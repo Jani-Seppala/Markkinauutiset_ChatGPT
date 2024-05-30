@@ -27,6 +27,8 @@ function UserProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    // localStorage.removeItem('token_expires_at');
+    localStorage.removeItem('userId');
     setIsLoggedIn(false);
   };
 
@@ -46,3 +48,4 @@ function UserProvider({ children }) {
 }
 
 export { UserContext, useUser, UserProvider };
+

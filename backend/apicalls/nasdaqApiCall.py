@@ -194,10 +194,29 @@ def process_and_save_news(linked_news):
             item['relatedId'] = related_id
             unique_id = item['disclosureId']
             
-            # Check for language and market requirements
-            if item['language'] != 'fi' or (item['market'] not in ["Main Market, Helsinki", "First North Finland"]):
-                logging.info(f"Skipping news item with ID {unique_id} due to language/market mismatch.")
+            # # Check for language and market requirements
+            # if item['language'] != 'fi' or (item['market'] not in ["Main Market, Helsinki", "First North Finland"]):
+            #     logging.info(f"Skipping news item with ID {unique_id} due to language/market mismatch.")
+            #     continue
+            
+            # # Check for language, market, and CNS category requirements
+            # if (item['language'] != 'fi' 
+            #     or item['market'] not in ["Main Market, Helsinki", "First North Finland"]
+            #     or item['cnsCategory'] in ['Managers\' transactions', 'Managers\' Transactions', 'Changes in company\'s own shares']):
+            #     logging.info(f"Skipping news item with ID {unique_id} and cnsCategory {item['cnsCategory']} due to language/market/CNS category mismatch.")
+            #     continue
+            
+            # Check for language, market, and CNS category requirements
+            if item['language'] != 'fi':
+                logging.info(f"Skipping news item with ID {unique_id} due to language mismatch. Language: {item['language']}")
                 continue
+            elif item['market'] not in ["Main Market, Helsinki", "First North Finland"]:
+                logging.info(f"Skipping news item with ID {unique_id} due to market mismatch. Market: {item['market']}")
+                continue
+            elif item['cnsCategory'] in ['Managers\' transactions', 'Managers\' Transactions', 'Changes in company\'s own shares']:
+                logging.info(f"Skipping news item with ID {unique_id} due to CNS category mismatch. Category: {item['cnsCategory']}")
+                continue
+
             
             # Check for existing item in both news and unmatched_news collections
             existing_news_item = mongo.db.news.find_one({'disclosureId': unique_id})
