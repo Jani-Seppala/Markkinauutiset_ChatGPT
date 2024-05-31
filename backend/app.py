@@ -300,14 +300,15 @@ def get_logged_in_user():
 #         start_scheduler()
 
 if os.environ.get('FLASK_ENV') == 'production':
-    logging.info(f"FLASK_ENV == production, checking parent process ID...")
+    logging.info(f"FLASK_ENV == production")
     parent_id = os.getppid()
     logging.info(f"Current parent process ID (PPID): {parent_id}")
-    if parent_id == 1:
-        logging.info("Confirmed running under init system (PPID is 1), starting scheduler...")
-        start_scheduler()
-    else:
-        logging.info(f"Not starting scheduler; PPID is not 1 (actual PPID: {parent_id})")
+    start_scheduler()
+    # if parent_id == 1:
+    #     logging.info("Confirmed running under init system (PPID is 1), starting scheduler...")
+    #     start_scheduler()
+    # else:
+    #     logging.info(f"Not starting scheduler; PPID is not 1 (actual PPID: {parent_id})")
 
 
 if __name__ == '__main__':
