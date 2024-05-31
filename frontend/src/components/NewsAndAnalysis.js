@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import axios from 'axios';
+// import axios from 'axios';
+import axios from './AxiosSetup';
 import NewsItem from './NewsItem';
 import FlashMessage from './FlashMessage';
 
@@ -14,7 +15,8 @@ function NewsAndAnalysis({ stockIds, token }) {
     const fetchNews = useCallback((currentPage, reset = false) => {
         setLoading(true);
         // const baseUrl = 'http://localhost:5000/api/news-with-analysis';
-        const baseUrl = `${process.env.REACT_APP_API_BASE_URL}/api/news-with-analysis`;
+        // const baseUrl = `${process.env.REACT_APP_API_BASE_URL}/api/news-with-analysis`;
+        const baseUrl = `/api/news-with-analysis`; // Use relative URL
         const params = new URLSearchParams({
             page: currentPage
         });
