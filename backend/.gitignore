@@ -3,3 +3,4 @@ tests/
 logs/
 prompt.txt
 config.py
+yfinance.cache

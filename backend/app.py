@@ -10,7 +10,6 @@ import subprocess
 import sys
 import os
 import logging
-# from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 # app = Flask(__name__)
 app = Flask(__name__, static_folder='frontend/build/static', static_url_path='/static')
@@ -45,6 +44,8 @@ logging.info(f"Environment: {os.getenv('FLASK_ENV')}")
 
 
 def start_scheduler():
+    logging.info("in the scheluder func attempting to call nadsdaqapicall")
+    logging.info(f"Python executable: {sys.executable}")
     subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
     
 
@@ -292,13 +293,38 @@ def get_logged_in_user():
         return jsonify({"success": False, "message": "User not found."}), 404
     
 
+# if os.environ.get('FLASK_ENV') == 'production':
+#     logging.info("FLASK_ENV == production, newxt check if os.getpid() == 1...")
+#     if os.getppid() == 1:  # Check if the parent process is the init process
+#         logging.info("FLASK_ENV is production, starting scheduler...")
+#         start_scheduler()
+
 if os.environ.get('FLASK_ENV') == 'production':
-    if os.getppid() == 1:  # Check if the parent process is the init process
-        logging.info("FLASK_ENV is production, starting scheduler...")
-        start_scheduler()  # Start scheduler when in production
+    logging.info(f"FLASK_ENV == production, checking parent process ID...")
+    parent_id = os.getppid()
+    logging.info(f"Current parent process ID (PPID): {parent_id}")
+    if parent_id == 1:
+        logging.info("Confirmed running under init system (PPID is 1), starting scheduler...")
+        start_scheduler()
+    else:
+        logging.info(f"Not starting scheduler; PPID is not 1 (actual PPID: {parent_id})")
+
 
 if __name__ == '__main__':
     logging.info("__name__ is main, starting scheduler...")
     start_scheduler()
     app.run(debug=True, use_reloader=False)
     # app.run(debug=True)
+    # npm run build
+    # serve -s build
+    # journalctl -u markkinauutiset-chatgpt.service -f
+    # sudo nano /etc/nginx/sites-available/markkinauutiset-chatgpt
+    # sudo nano /etc/systemd/system/markkinauutiset-chatgpt.service
+    # sudo systemctl restart markkinauutiset-chatgpt.service
+    # sudo systemctl status markkinauutiset-chatgpt.service
+    # sudo systemctl stop markkinauutiset-chatgpt.service
+    # sudo systemctl start markkinauutiset-chatgpt.service
+    # cd /var/www/markkinauutiset-chatgpt
+    
+
+
