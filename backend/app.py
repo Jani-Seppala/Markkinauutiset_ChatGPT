@@ -325,6 +325,9 @@ if __name__ == '__main__':
     # sudo systemctl stop markkinauutiset-chatgpt.service
     # sudo systemctl start markkinauutiset-chatgpt.service
     # cd /var/www/markkinauutiset-chatgpt
+    # git clean -fd
+    # git pull origin main
+
     
 
 
