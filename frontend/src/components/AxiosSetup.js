@@ -4,7 +4,7 @@ const axiosInstance = axios.create({
     baseURL: process.env.REACT_APP_API_BASE_URL
 });
 
-console.log(`Axios baseURL: ${axiosInstance.defaults.baseURL}`); // Log the baseURL
+// console.log(`Axios baseURL: ${axiosInstance.defaults.baseURL}`); // Log the baseURL
 
 axiosInstance.interceptors.response.use(
     response => response,

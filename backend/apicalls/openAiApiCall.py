@@ -8,7 +8,9 @@ client = OpenAI()
 
 def load_prompt():
     # Try to get the prompt from an environment variable
-    prompt = os.getenv('PROMPT_TEMPLATE')
+    # prompt = os.getenv('PROMPT_TEMPLATE')
+    prompt = os.environ.get('PROMPT_TEMPLATE')
+    # if os.environ.get('FLASK_ENV') == 'production':
     
     # If the environment variable is not set, read from a local file
     if prompt is None:

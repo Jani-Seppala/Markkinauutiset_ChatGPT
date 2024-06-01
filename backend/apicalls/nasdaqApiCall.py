@@ -155,8 +155,6 @@ def fetch_stock_price_and_analyze(news_item):
                 logging.info(f"Error fetching stock data: {e} for {news_item.get('stock_symbol')}")
                 return
             
-    # news_item['price_before_news'] = price_before_news
-    # mongo.db.news.insert_one(news_item)
     
     if 'price_before_news' in stock_info:
         news_item['price_before_news'] = stock_info['price_before_news']
@@ -168,7 +166,6 @@ def fetch_stock_price_and_analyze(news_item):
     mongo.db.news.insert_one(news_item)
     
     # Get analysis from the news with the stock price from openAiApiCall.py
-    # analysis_content, prompt = analyze_news(news_item, price_before_news, close_prices)
     if os.environ.get('FLASK_ENV') == 'production':
         analysis_content, prompt = analyze_news(news_item, stock_info)
     else:
