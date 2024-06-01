@@ -135,6 +135,7 @@ def link_related_news(grouped_news):
 def fetch_stock_price_and_analyze(news_item):
     # Create a unique cache key based on company name and release time
     cache_key = (news_item['company'], news_item['releaseTime'])
+    print(price_cache)
 
     # Check if data is in cache
     if cache_key in price_cache:
@@ -296,6 +297,7 @@ def print_next_fetch_time(job):
     # Get the next scheduled run time from the job
     next_run = job.next_run
     logging.info(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(os.environ.get('PROMPT_TEMPLATE'))
 
 
 main_market_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicMainMarkets&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"

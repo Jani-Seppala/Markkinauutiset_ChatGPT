@@ -2,6 +2,7 @@ venv/
 tests/
 logs/
 __pycache__/
+apicalls/__pycache__/
 *.pyc
 prompt.txt
 config.py
