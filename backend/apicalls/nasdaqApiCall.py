@@ -297,7 +297,7 @@ def print_next_fetch_time(job):
     # Get the next scheduled run time from the job
     next_run = job.next_run
     logging.info(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(os.environ.get('PROMPT_TEMPLATE'))
+    logging.info(os.environ.get('PROMPT_TEMPLATE'))
 
 
 main_market_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicMainMarkets&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
