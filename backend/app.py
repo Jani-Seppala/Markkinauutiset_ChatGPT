@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response, send_from_directory
+from flask import Flask, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from bson.objectid import ObjectId
@@ -6,8 +6,8 @@ from flask_cors import CORS
 from bson import json_util
 from datetime import timedelta
 import bcrypt
-import subprocess
-import sys
+# import subprocess
+# import sys
 import os
 import logging
 
@@ -43,10 +43,10 @@ logging.info("Application is starting...")
 logging.info(f"Environment: {os.getenv('FLASK_ENV')}")
 
 
-def start_scheduler():
-    logging.info("in the scheluder func attempting to call nadsdaqapicall")
-    logging.info(f"Python executable: {sys.executable}")
-    subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
+# def start_scheduler():
+#     logging.info("in the scheluder func attempting to call nadsdaqapicall")
+#     logging.info(f"Python executable: {sys.executable}")
+#     subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
     
 
 # @app.route('/')
@@ -299,11 +299,11 @@ def get_logged_in_user():
 #         logging.info("FLASK_ENV is production, starting scheduler...")
 #         start_scheduler()
 
-if os.environ.get('FLASK_ENV') == 'production':
-    logging.info(f"FLASK_ENV == production")
-    parent_id = os.getppid()
-    logging.info(f"Current parent process ID (PPID): {parent_id}")
-    start_scheduler()
+# if os.environ.get('FLASK_ENV') == 'production':
+#     logging.info(f"FLASK_ENV == production")
+#     parent_id = os.getppid()
+#     logging.info(f"Current parent process ID (PPID): {parent_id}")
+#     start_scheduler()
     # if parent_id == 1:
     #     logging.info("Confirmed running under init system (PPID is 1), starting scheduler...")
     #     start_scheduler()
@@ -312,9 +312,18 @@ if os.environ.get('FLASK_ENV') == 'production':
 
 
 if __name__ == '__main__':
-    logging.info("__name__ is main, starting scheduler...")
-    start_scheduler()
+    logging.info("__name__ is main, importing nasdaqApiCall and calling it...")
+    
+    try:
+        from gunicorn_config import start_nasdaq_api_call
+        start_nasdaq_api_call()
+    except ImportError as e:
+        logging.error("Failed to import the scheduler start function: %s", e)
+        # Optionally handle the error, e.g., by falling back to another method
+    
     app.run(debug=True, use_reloader=False)
+    # app.run(debug=True)
+    
     # app.run(debug=True)
     # npm run build
     # serve -s build
