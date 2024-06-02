@@ -167,6 +167,7 @@ def fetch_stock_price_and_analyze(news_item):
     mongo.db.news.insert_one(news_item)
     
     # Get analysis from the news with the stock price from openAiApiCall.py
+    # analysis_content, prompt = analyze_news(news_item, stock_info)
     if os.environ.get('FLASK_ENV') == 'production':
         analysis_content, prompt = analyze_news(news_item, stock_info)
     else:
@@ -297,8 +298,8 @@ def print_next_fetch_time(job):
     # Get the next scheduled run time from the job
     next_run = job.next_run
     logging.info(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
-    logging.info(os.environ.get('PROMPT_TEMPLATE'))
-    logging.info(os.environ)
+    # logging.info(os.environ.get('PROMPT_TEMPLATE'))
+    # logging.info(os.environ)
 
 
 main_market_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicMainMarkets&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
