@@ -135,7 +135,7 @@ def link_related_news(grouped_news):
 def fetch_stock_price_and_analyze(news_item):
     # Create a unique cache key based on company name and release time
     cache_key = (news_item['company'], news_item['releaseTime'])
-    print(price_cache)
+    print(f"{price_cache=} fetch_stock_price_and_analyze eka print")
 
     # Check if data is in cache
     if cache_key in price_cache:
