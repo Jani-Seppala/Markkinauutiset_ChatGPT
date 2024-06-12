@@ -18,7 +18,8 @@ def load_prompt():
     if prompt is None:
         try:
             logging.info(f"Current working directory: {os.getcwd()}")
-            with open('prompt.txt', 'r') as file:
+            # with open('prompt.txt', 'r') as file:
+            with open('prompt.txt', 'r', encoding='utf-8') as file:
                 prompt = file.read()
         except FileNotFoundError:
             logging.warning("Prompt file not found and no environment variable set. Using default prompt.")
@@ -30,8 +31,8 @@ def load_prompt():
 def analyze_news(news_item, stock_info):
     """Generates an analysis for a given news item and associated stock price data."""
     
+    # prompt = ""
     try:
-        
         PROMPT = load_prompt()
         if not PROMPT:
             logging.warning("Failed to load prompt. Skipping news item analysis.")
@@ -39,7 +40,7 @@ def analyze_news(news_item, stock_info):
         if 'messageUrlContent' not in news_item:
             return ("Error: 'messageUrlContent' not found in news_item", PROMPT)
         
-        prompt = PROMPT.format(stock_info=stock_info, news_item=news_item['messageUrlContent'])
+        prompt = PROMPT.format(stock_data=stock_info, news_item=news_item['messageUrlContent'])
 
         # print(prompt)
 
@@ -54,11 +55,13 @@ def analyze_news(news_item, stock_info):
     
         completion = client.chat.completions.create(
             # model="gpt-3.5-turbo",
-            model="gpt-4-turbo",
+            # model="gpt-4-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": prompt}
             ],
             temperature=0.5,
+            # temperature=1,
         )
 
         # Extract the generated analysis
