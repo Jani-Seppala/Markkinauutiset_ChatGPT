@@ -9,9 +9,12 @@ import re
 import os
 import schedule
 import logging
+from config2 import get_mongo_client
 from .YahooFinanceApiCall import main as fetch_stock_data
 from .openAiApiCall import analyze_news
 
+client = get_mongo_client()
+db = client.get_default_database()
 
 logging.info('Starting nasdaqApiCall.py')
 
@@ -261,6 +264,65 @@ def fetch_text_from_url(url):
         return None
 
 
+# def market_hours_job():
+#     global price_cache
+#     price_cache = {}  # Reset the cache at the start of each job
+#     logging.info(f"Scheduled job during market hours at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')}")
+#     fetch_news(main_market_url)
+#     fetch_news(first_north_url)
+#     check_and_reschedule()
+
+# def off_market_hours_job():
+#     global price_cache
+#     price_cache = {}  # Reset the cache at the start of each job
+#     logging.info(f"Scheduled job outside market hours at {datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S')}")
+#     fetch_news(main_market_url)
+#     fetch_news(first_north_url)
+#     check_and_reschedule()
+
+# def check_and_reschedule():
+#     CET = pytz.timezone('Europe/Stockholm')
+#     now = datetime.datetime.now(CET)
+#     hour = now.hour
+#     weekday = now.weekday()
+    
+#     # Clear any existing schedules regardless of the time or day
+#     schedule.clear()
+
+#     if weekday < 5 and 7 <= hour < 18:  # During market hours
+#         job = schedule.every().minute.at(":05").do(market_hours_job)
+#         print_next_fetch_time(job)
+#     else:  # Outside market hours
+#         job = schedule.every(15).minutes.do(off_market_hours_job)
+#         print_next_fetch_time(job)
+
+
+# def print_next_fetch_time(job):
+#     # Get the next scheduled run time from the job
+#     next_run = job.next_run
+#     logging.info(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+
+
+# main_market_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicMainMarkets&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
+# first_north_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicFirstNorth&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
+
+# check_and_reschedule()
+
+# try:
+#     while True:
+#         schedule.run_pending()
+#         time.sleep(1)
+# except KeyboardInterrupt:
+#     logging.info("Stopped by user.")
+
+
+def run_once():
+    logging.info("Running once cronjob.")
+    global price_cache
+    price_cache = {}  # Reset the cache at the start of each job
+    fetch_news(main_market_url)
+    fetch_news(first_north_url)
+
 def market_hours_job():
     global price_cache
     price_cache = {}  # Reset the cache at the start of each job
@@ -298,18 +360,24 @@ def print_next_fetch_time(job):
     # Get the next scheduled run time from the job
     next_run = job.next_run
     logging.info(f"Next fetch scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
-    # logging.info(os.environ.get('PROMPT_TEMPLATE'))
-    # logging.info(os.environ)
 
 
 main_market_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicMainMarkets&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
 first_north_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&showAttachments=true&showCnsSpecific=true&showCompany=true&countResults=false&freeText=&market=&cnscategory=&company=&fromDate=&toDate=&globalGroup=exchangeNotice&globalName=NordicFirstNorth&displayLanguage=en&language=&timeZone=CET&dateMask=yyyy-MM-dd%20HH%3Amm%3Ass&limit=20&start=0&dir=DESC"
 
-check_and_reschedule()
 
-try:
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-except KeyboardInterrupt:
-    logging.info("Stopped by user.")
+if __name__ == "__main__":
+    env = os.getenv('FLASK_ENV', 'development')
+    if env == 'production':
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+        run_once()  # In production, just run once when executed by cron
+    else:
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s')
+        check_and_reschedule()  # In development, use internal scheduler for frequent testing
+        try:
+            while True:
+                schedule.run_pending()
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logging.info("Stopped by user.")
+

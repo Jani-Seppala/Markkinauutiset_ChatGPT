@@ -5,24 +5,28 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 from bson import json_util
 from datetime import timedelta
+from config2 import create_app, get_flask_pymongo
 import bcrypt
-# import subprocess
-# import sys
+import subprocess
+import sys
 import os
 import logging
 
 # app = Flask(__name__)
-app = Flask(__name__, static_folder='frontend/build/static', static_url_path='/static')
+# app = Flask(__name__, static_folder='frontend/build/static', static_url_path='/static')
 
-if os.environ.get('FLASK_ENV') == 'production':
-    app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_PROD')
-else:
-    app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_DEV')
+# if os.environ.get('FLASK_ENV') == 'production':
+#     app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_PROD')
+# else:
+#     app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_DEV')
 
 
-app.config["SECRET_KEY"] = os.environ.get('FLASK_SECRET_KEY')
-if not app.config["SECRET_KEY"]:
-    raise RuntimeError("FLASK_SECRET_KEY is not set")
+# app.config["SECRET_KEY"] = os.environ.get('FLASK_SECRET_KEY')
+# if not app.config["SECRET_KEY"]:
+#     raise RuntimeError("FLASK_SECRET_KEY is not set")
+
+app = create_app()
+mongo = get_flask_pymongo(app)
 
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
@@ -30,7 +34,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 jwt = JWTManager(app)
 
 # Initialize PyMongo
-mongo = PyMongo(app)
+# mongo = PyMongo(app)
 CORS(app)
 
 
@@ -311,35 +315,28 @@ def get_logged_in_user():
     #     logging.info(f"Not starting scheduler; PPID is not 1 (actual PPID: {parent_id})")
 
 
-if __name__ == '__main__':
-    logging.info("__name__ is main, importing nasdaqApiCall and calling it...")
+# if __name__ == '__main__':
+#     logging.info("__name__ is main, importing nasdaqApiCall and calling it...")
     
-    try:
-        from gunicorn_config import start_nasdaq_api_call
-        start_nasdaq_api_call()
-    except ImportError as e:
-        logging.error("Failed to import the scheduler start function: %s", e)
-        # Optionally handle the error, e.g., by falling back to another method
+#     try:
+#         from gunicorn_config import start_nasdaq_api_call
+#         start_nasdaq_api_call()
+#     except ImportError as e:
+#         logging.error("Failed to import the scheduler start function: %s", e)
+#         # Optionally handle the error, e.g., by falling back to another method
     
-    app.run(debug=True, use_reloader=False)
-    # app.run(debug=True)
+#     app.run(debug=True, use_reloader=False)
+#     # app.run(debug=True)
     
-    # app.run(debug=True)
-    # npm run build
-    # serve -s build
-    # journalctl -u markkinauutiset-chatgpt.service -f
-    # sudo nano /etc/nginx/sites-available/markkinauutiset-chatgpt
-    # sudo nano /etc/systemd/system/markkinauutiset-chatgpt.service
-    # sudo systemctl restart markkinauutiset-chatgpt.service
-    # sudo systemctl status markkinauutiset-chatgpt.service
-    # sudo systemctl stop markkinauutiset-chatgpt.service
-    # sudo systemctl start markkinauutiset-chatgpt.service
-    # sudo systemctl daemon-reload
-    # systemctl show --property=Environment markkinauutiset-chatgpt.service
-    # cd /var/www/markkinauutiset_chatgpt
-    # git clean -fd
-    # git pull origin main
-
+if __name__ == "__main__":
+    env = os.getenv('FLASK_ENV', 'development')
+    if env == 'development':
+        logging.info("Development environment detected. calling nasdaqapicall from app.py")
+        try:
+            subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
+        except Exception as e:
+            logging.error(f"Failed to start the scheduler: {str(e)}")
     
-
-
+        app.run(debug=True, use_reloader=False)
+        # app.run(debug=True)
+        
