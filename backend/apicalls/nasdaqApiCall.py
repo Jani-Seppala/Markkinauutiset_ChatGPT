@@ -4,14 +4,22 @@ import pytz
 import time
 from uuid import uuid4
 from bs4 import BeautifulSoup
-from app import mongo
+# from app import mongo
 import re
 import os
+import sys
 import schedule
 import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config2 import get_mongo_client
-from .YahooFinanceApiCall import main as fetch_stock_data
-from .openAiApiCall import analyze_news
+
+# from .YahooFinanceApiCall import main as fetch_stock_data
+# from .openAiApiCall import analyze_news
+from apicalls.YahooFinanceApiCall import main as fetch_stock_data
+from apicalls.openAiApiCall import analyze_news
 
 client = get_mongo_client()
 db = client.get_default_database()
@@ -167,7 +175,7 @@ def fetch_stock_price_and_analyze(news_item):
         return
 
     # Save news item in MongoDB
-    mongo.db.news.insert_one(news_item)
+    db.news.insert_one(news_item)
     
     # Get analysis from the news with the stock price from openAiApiCall.py
     # analysis_content, prompt = analyze_news(news_item, stock_info)
@@ -184,7 +192,7 @@ def fetch_stock_price_and_analyze(news_item):
         "prompt": prompt
     }
     
-    mongo.db.analysis.insert_one(analysis_document)
+    db.analysis.insert_one(analysis_document)
     logging.info(f"Saved news and analysis for {news_item.get('stock_symbol')}")
     logging.info('-----------------------------NEXT NEWS ITEM----------------------------------------')
 
@@ -221,8 +229,8 @@ def process_and_save_news(linked_news):
 
             
             # Check for existing item in both news and unmatched_news collections
-            existing_news_item = mongo.db.news.find_one({'disclosureId': unique_id})
-            existing_unmatched_item = mongo.db.unmatched_news.find_one({'disclosureId': unique_id})
+            existing_news_item = db.news.find_one({'disclosureId': unique_id})
+            existing_unmatched_item = db.unmatched_news.find_one({'disclosureId': unique_id})
             logging.info(f"Checking for existing item with ID {unique_id}: Found in news - {existing_news_item is not None}, Found in unmatched_news - {existing_unmatched_item is not None}")
 
             if not existing_news_item and not existing_unmatched_item:
@@ -231,7 +239,7 @@ def process_and_save_news(linked_news):
                     item['messageUrlContent'] = item_text
 
                 # Directly look up the stock in the database using the company name, market, and aliases
-                stock = mongo.db.stocks.find_one({"$or": [{"name": item.get('company')}, {"aliases": item.get('company')}], "market": item.get('market')})
+                stock = db.stocks.find_one({"$or": [{"name": item.get('company')}, {"aliases": item.get('company')}], "market": item.get('market')})
                 if stock:
                     item['stock_id'] = stock['_id']
                     item['stock_symbol'] = stock.get('symbol', 'N/A')  # Add the stock symbol to the news item
@@ -240,7 +248,7 @@ def process_and_save_news(linked_news):
                 else:
                     logging.info(f"Could not find a match for news item company name '{item.get('company')}' in market '{item.get('market')}'; saved for manual review.")
                     item['review_needed'] = True
-                    mongo.db.unmatched_news.insert_one(item)
+                    db.unmatched_news.insert_one(item)
 
             elif existing_news_item or existing_unmatched_item:
                 logging.info(f"News item with disclosureId '{unique_id}' already exists in the database. Company '{item.get('company')}'")
@@ -317,7 +325,8 @@ def fetch_text_from_url(url):
 
 
 def run_once():
-    logging.info("Running once cronjob.")
+    logging.info("Running once cronjob and sleeping 5 seconds to start fetch 5 seconds past minute.")
+    time.sleep(5)
     global price_cache
     price_cache = {}  # Reset the cache at the start of each job
     fetch_news(main_market_url)
