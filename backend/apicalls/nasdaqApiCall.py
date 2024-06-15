@@ -21,8 +21,27 @@ from config2 import get_mongo_client
 from apicalls.YahooFinanceApiCall import main as fetch_stock_data
 from apicalls.openAiApiCall import analyze_news
 
-client = get_mongo_client()
-db = client.get_default_database()
+# client = get_mongo_client()
+# db = client.get_default_database()
+
+# Attempt to get the MongoDB client
+try:
+    client = get_mongo_client()
+    # Log the client instance and its server info (to check connectivity)
+    logging.info(f"MongoDB client created: {client}")
+    logging.info(f"MongoDB server info: {client.server_info()}")
+except Exception as e:
+    logging.error(f"Error getting MongoDB client: {e}")
+
+# If the client was successfully created, attempt to get the default database
+try:
+    db = client.get_default_database()
+    logging.info(f"Default database selected: {db.name}")
+except Exception as e:
+    logging.error(f"Error getting default database: {e}")
+
+
+
 
 logging.info('Starting nasdaqApiCall.py')
 
