@@ -25,20 +25,20 @@ from apicalls.openAiApiCall import analyze_news
 # db = client.get_default_database()
 
 # Attempt to get the MongoDB client
-try:
-    client = get_mongo_client()
-    # Log the client instance and its server info (to check connectivity)
-    logging.info(f"MongoDB client created: {client}")
-    logging.info(f"MongoDB server info: {client.server_info()}")
-except Exception as e:
-    logging.error(f"Error getting MongoDB client: {e}")
+# try:
+#     client = get_mongo_client()
+#     # Log the client instance and its server info (to check connectivity)
+#     logging.info(f"MongoDB client created: {client}")
+#     logging.info(f"MongoDB server info: {client.server_info()}")
+# except Exception as e:
+#     logging.error(f"Error getting MongoDB client: {e}")
 
-# If the client was successfully created, attempt to get the default database
-try:
-    db = client.get_default_database()
-    logging.info(f"Default database selected: {db.name}")
-except Exception as e:
-    logging.error(f"Error getting default database: {e}")
+# # If the client was successfully created, attempt to get the default database
+# try:
+#     db = client.get_default_database()
+#     logging.info(f"Default database selected: {db.name}")
+# except Exception as e:
+#     logging.error(f"Error getting default database: {e}")
 
 
 
@@ -396,6 +396,13 @@ first_north_url = "https://api.news.eu.nasdaq.com/news/query.action?type=json&sh
 
 if __name__ == "__main__":
     env = os.getenv('FLASK_ENV', 'development')
+    client = get_mongo_client()
+    try:
+        # Attempt to get the default database and log the success
+        db = client.get_default_database()
+        logging.info(f"Default database selected: {db.name}")
+    except Exception as e:
+        logging.error(f"Error getting default database: {e}")
     if env == 'production':
         logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
         run_once()  # In production, just run once when executed by cron
