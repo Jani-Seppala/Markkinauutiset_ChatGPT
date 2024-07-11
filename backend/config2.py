@@ -35,20 +35,10 @@ def get_redis_client():
     pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
     return redis.StrictRedis(connection_pool=pool)
 
-# def create_socketio(app):
-#     # Ensure the async mode is set to eventlet for Flask-SocketIO
-#     if os.getenv('FLASK_ENV') == 'production':
-#         cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"]
-#         # Setting message_queue if you are using Redis for handling SocketIO messaging across multiple instances
-#         socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins=cors_allowed_origins, message_queue='redis://yourRedisURL')
-#     else:
-#         cors_allowed_origins = ["http://localhost:3000"]
-#         socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins=cors_allowed_origins)
-#     return socketio
-
 def create_socketio(app):
     cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
-    message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
+    # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
+    message_queue = None
     socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins=cors_allowed_origins, message_queue=message_queue)
     return socketio
 

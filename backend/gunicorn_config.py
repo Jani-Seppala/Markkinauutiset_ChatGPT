@@ -5,6 +5,7 @@ import sys
 
 bind = "0.0.0.0:8080"
 workers = 1
+worker_class = 'eventlet'  # Use eventlet worker for WebSocket support
     
 def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
