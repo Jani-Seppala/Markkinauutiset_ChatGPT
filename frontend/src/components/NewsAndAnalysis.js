@@ -77,7 +77,7 @@ function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
         console.log("Setting up socket event listeners");
         // Only set up the listener if on the front page
         if (location.pathname === '/') { // Assuming '/' is your front page route
-            console.log("if lauseessa / jälkeen.");
+            console.log("if lauseessa / jälkeen");
             socket.on('update_news', data => {
                 console.log(data.message);
                 playNotificationSound();
