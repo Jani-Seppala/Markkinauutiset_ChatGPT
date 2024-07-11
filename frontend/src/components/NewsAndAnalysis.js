@@ -5,7 +5,15 @@ import axios from './AxiosSetup';
 import NewsItem from './NewsItem';
 import FlashMessage from './FlashMessage';
 
-const socket = io(axios.defaults.baseURL, { transports: ['websocket'] });
+// const socket = io(axios.defaults.baseURL, { transports: ['websocket'] });
+
+const socket = io(axios.defaults.baseURL, {
+    transports: ['websocket'],
+    reconnectionAttempts: 5,
+    reconnectionDelayMax: 10000
+});
+
+
 console.log("axios.defaults.baseURL:", axios.defaults.baseURL);
 // const socket = io('http://localhost:5000', { transports: ['websocket'] });
 // const socket = io('http://localhost:5000'); // Connect to the server where your Flask app is running
@@ -21,9 +29,12 @@ socket.on('update_news', function(data) {
 });
 
 
-// socket.on('connect_error', (error) => {
-//     console.error('Connection error:', error);
-// });
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+});
+
+
+
 
 function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
     const [newsWithAnalysis, setNewsWithAnalysis] = useState([]);
