@@ -4,44 +4,23 @@ import pytz
 import time
 from uuid import uuid4
 from bs4 import BeautifulSoup
-# from app import mongo
 import re
 import os
 import sys
 import schedule
 import logging
+# import redis
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config2 import get_mongo_client
+from config2 import get_mongo_client, get_redis_client
 
-# from .YahooFinanceApiCall import main as fetch_stock_data
-# from .openAiApiCall import analyze_news
 from apicalls.YahooFinanceApiCall import main as fetch_stock_data
 from apicalls.openAiApiCall import analyze_news
 
-# client = get_mongo_client()
-# db = client.get_default_database()
-
-# Attempt to get the MongoDB client
-# try:
-#     client = get_mongo_client()
-#     # Log the client instance and its server info (to check connectivity)
-#     logging.info(f"MongoDB client created: {client}")
-#     logging.info(f"MongoDB server info: {client.server_info()}")
-# except Exception as e:
-#     logging.error(f"Error getting MongoDB client: {e}")
-
-# # If the client was successfully created, attempt to get the default database
-# try:
-#     db = client.get_default_database()
-#     logging.info(f"Default database selected: {db.name}")
-# except Exception as e:
-#     logging.error(f"Error getting default database: {e}")
-
-
-
+# redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = get_redis_client()
 
 logging.info('Starting nasdaqApiCall.py')
 
@@ -194,24 +173,45 @@ def fetch_stock_price_and_analyze(news_item):
         return
 
     # Save news item in MongoDB
-    db.news.insert_one(news_item)
+    try:
+        db.news.insert_one(news_item)
+    except Exception as e:
+        logging.error(f"Error inserting news item into database: {e}")
+        return  # Exit the function if the news item insert fails
     
     # Get analysis from the news with the stock price from openAiApiCall.py
-    # analysis_content, prompt = analyze_news(news_item, stock_info)
-    if os.environ.get('FLASK_ENV') == 'production':
-        analysis_content, prompt = analyze_news(news_item, stock_info)
-    else:
-        analysis_content = "This is static analysis content for testing."
-        prompt = "Static prompt for testing."
+    # analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
+    try:
+        if os.environ.get('FLASK_ENV') == 'production':
+            analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
+        else:
+            analysis_content = "This is static analysis content for testing."
+            prompt = "Static prompt for testing."
+            model_used = "Static model for testing."
+            
+        analysis_document = {
+            "news_id": news_item["_id"],
+            "company": news_item['company'],
+            "analysis_content": analysis_content,
+            "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
+            "prompt": prompt,
+            "model_used": model_used
+        }
         
-    analysis_document = {
-        "news_id": news_item["_id"],
-        "analysis_content": analysis_content,
-        "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
-        "prompt": prompt
-    }
+        db.analysis.insert_one(analysis_document)
+        
+    except Exception as e:
+        logging.error(f"Error inserting analysis item into database: {e}")
+        return
+
     
-    db.analysis.insert_one(analysis_document)
+    # Publish a notification to Redis
+    try:
+        redis_client.publish('news_channel', 'New data available')
+    except Exception as e:
+        logging.error(f"Error publishing to Redis: {e}")
+        return
+    
     logging.info(f"Saved news and analysis for {news_item.get('stock_symbol')}")
     logging.info('-----------------------------NEXT NEWS ITEM----------------------------------------')
 
@@ -380,7 +380,8 @@ def check_and_reschedule():
         job = schedule.every().minute.at(":05").do(market_hours_job)
         print_next_fetch_time(job)
     else:  # Outside market hours
-        job = schedule.every(15).minutes.do(off_market_hours_job)
+        # job = schedule.every(15).minutes.do(off_market_hours_job)
+        job = schedule.every(2).minutes.do(off_market_hours_job)
         print_next_fetch_time(job)
 
 

@@ -49,10 +49,11 @@ def analyze_news(news_item, stock_info):
         
         logging.info(f"Prompt contains {number_of_tokens} tokens in openAiApiCall.py")
     
+        model_used = "gpt-4o"
         completion = client.chat.completions.create(
             # model="gpt-3.5-turbo",
             # model="gpt-4-turbo",
-            model="gpt-4o",
+            model=model_used,
             messages=[
                 {"role": "system", "content": prompt}
             ],
@@ -62,10 +63,12 @@ def analyze_news(news_item, stock_info):
 
         # Extract the generated analysis
         analysis_content = completion.choices[0].message.content
-        return analysis_content, prompt
+        return analysis_content, prompt, model_used
 
     except Exception as e:
-        return (f"An error occurred in analyze_news: {str(e)}", prompt)
+        # return (f"An error occurred in analyze_news: {str(e)}", prompt)
+        logging.error(f"An error occurred in analyze_news: {str(e)}")
+        return (f"An error occurred in analyze_news: {str(e)}", prompt, None)
 
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:

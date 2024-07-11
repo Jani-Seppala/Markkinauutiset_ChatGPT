@@ -1,29 +1,24 @@
-from flask import Flask, request, redirect, url_for, flash, jsonify, session, send_from_directory
-from flask_pymongo import PyMongo
+import eventlet
+eventlet.monkey_patch()  # Patch the standard library to be non-blocking
+
+
+from flask import request, redirect, url_for, flash, jsonify, session, send_from_directory
+# from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_socketio import SocketIO
 from bson.objectid import ObjectId
 from flask_cors import CORS
 from bson import json_util
 from datetime import timedelta
+# from config2 import create_app, get_flask_pymongo, create_socketio, get_redis_client
 from config2 import create_app, get_flask_pymongo
+# import redis
 import bcrypt
 import subprocess
 import sys
 import os
 import logging
-
-# app = Flask(__name__)
-# app = Flask(__name__, static_folder='frontend/build/static', static_url_path='/static')
-
-# if os.environ.get('FLASK_ENV') == 'production':
-#     app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_PROD')
-# else:
-#     app.config["MONGO_URI"] = os.environ.get('MONGODB_URI_DEV')
-
-
-# app.config["SECRET_KEY"] = os.environ.get('FLASK_SECRET_KEY')
-# if not app.config["SECRET_KEY"]:
-#     raise RuntimeError("FLASK_SECRET_KEY is not set")
+import time
 
 app = create_app()
 mongo = get_flask_pymongo(app)
@@ -33,10 +28,52 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 # app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=1)
 jwt = JWTManager(app)
 
-# Initialize PyMongo
-# mongo = PyMongo(app)
+# Enable CORS for the entire app
 CORS(app)
 
+
+
+# if os.getenv('FLASK_ENV') == 'production':
+#     cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"]  # Example for production
+# else:
+#     cors_allowed_origins = ["http://localhost:3000"]  # Example for development
+
+# Initialize the SocketIO instance and redis client
+# socketio = SocketIO(app, cors_allowed_origins="*")
+# socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+
+# socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+# socketio = SocketIO(app, cors_allowed_origins=cors_allowed_origins)
+
+
+# socketio = create_socketio(app)
+# redis_client = get_redis_client()
+
+
+# Determine Redis connection parameters based on the environment
+# if os.getenv('FLASK_ENV') == 'production':
+#     redis_host = os.getenv('REDIS_HOST', 'production_redis_host')  # Use your production Redis host
+#     redis_port = int(os.getenv('REDIS_PORT', 6379))  # Default Redis port or use your production Redis port
+#     redis_db = int(os.getenv('REDIS_DB', 0))  # Default Redis DB or use your production Redis DB
+#     redis_password = os.getenv('REDIS_PASSWORD', None)  # Your production Redis password, if any
+# else:
+#     redis_host = 'localhost'  # Default host for development
+#     redis_port = 6379  # Default port for development
+#     redis_db = 0  # Default DB for development
+#     redis_password = None  # Typically, no password for development
+
+# Initialize the Redis connection pool with dynamic parameters
+# pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
+# redis_client = redis.StrictRedis(connection_pool=pool)
+
+# pool = redis.ConnectionPool(host='localhost', port=6379, db=0, socket_timeout=5)
+# redis_client = redis.StrictRedis(connection_pool=pool)
+
+# try:
+#     redis_client.ping()
+#     print("Connected to Redis")
+# except redis.ConnectionError as e:
+#     print("Failed to connect to Redis:", e)
 
 # Basic configuration for logging
 logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more verbose output
@@ -46,16 +83,6 @@ logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more
 logging.info("Application is starting...")
 logging.info(f"Environment: {os.getenv('FLASK_ENV')}")
 
-
-# def start_scheduler():
-#     logging.info("in the scheluder func attempting to call nadsdaqapicall")
-#     logging.info(f"Python executable: {sys.executable}")
-#     subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])
-    
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -297,39 +324,63 @@ def get_logged_in_user():
         return jsonify({"success": False, "message": "User not found."}), 404
     
 
-# if os.environ.get('FLASK_ENV') == 'production':
-#     logging.info("FLASK_ENV == production, newxt check if os.getpid() == 1...")
-#     if os.getppid() == 1:  # Check if the parent process is the init process
-#         logging.info("FLASK_ENV is production, starting scheduler...")
-#         start_scheduler()
-
-# if os.environ.get('FLASK_ENV') == 'production':
-#     logging.info(f"FLASK_ENV == production")
-#     parent_id = os.getppid()
-#     logging.info(f"Current parent process ID (PPID): {parent_id}")
-#     start_scheduler()
-    # if parent_id == 1:
-    #     logging.info("Confirmed running under init system (PPID is 1), starting scheduler...")
-    #     start_scheduler()
-    # else:
-    #     logging.info(f"Not starting scheduler; PPID is not 1 (actual PPID: {parent_id})")
+# @socketio.on('connect')
+# def test_connect():
+#     print('Client connected')
+#     socketio.emit('response', {'data': 'Connected'})
+    
+    
 
 
-# if __name__ == '__main__':
-#     logging.info("__name__ is main, importing nasdaqApiCall and calling it...")
-    
-#     try:
-#         from gunicorn_config import start_nasdaq_api_call
-#         start_nasdaq_api_call()
-#     except ImportError as e:
-#         logging.error("Failed to import the scheduler start function: %s", e)
-#         # Optionally handle the error, e.g., by falling back to another method
-    
-#     app.run(debug=True, use_reloader=False)
-#     # app.run(debug=True)
-    
+# def message_received_handler(message):
+#     print("New data notification received in handler")
+#     socketio.emit('update_news', {'message': 'New data available'})
+
+# def listen_to_redis():
+#     pubsub = redis_client.pubsub()
+#     pubsub.subscribe('news_channel')
+#     while True:
+#         try:
+#             message = pubsub.get_message()
+#             if message and message['type'] == 'message':
+#                 # print("New data notification received in listen_to_redis")
+#                 print("Emitting 'update_news' with data:", {'message': 'New data available'})
+#                 socketio.emit('update_news', {'message': 'New data available'})
+#         except (redis.ConnectionError, redis.TimeoutError) as e:
+#             logging.error("Redis connection lost: {}. Reconnecting in 5 seconds...".format(str(e)))
+#             time.sleep(5)  # wait before trying to reconnect to Redis
+#         except Exception as e:
+#             logging.error("An error occurred: {}".format(str(e)))
+#             break  # stop the loop if other types of exceptions occur
+
+# def listen_to_redis():
+#     pubsub = redis_client.pubsub()
+#     pubsub.subscribe('news_channel')
+#     for message in pubsub.listen():  # This is a blocking call that listens for messages
+#         if message['type'] == 'message':
+#             data = {'message': message['data']}
+#             socketio.emit('update_news', data)
+
+#used only in development, production has its own redis_listener.py
+def listen_to_redis():
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('news_channel')
+    while True:
+        message = pubsub.get_message()
+        if message:
+            if message['type'] == 'message':
+                print("Received message:", message['data'])
+                socketio.emit('update_news', {'message': message['data'].decode()})
+        eventlet.sleep(0.1)  # Short sleep to yield control
+
 if __name__ == "__main__":
     env = os.getenv('FLASK_ENV', 'development')
+    
+    from config2 import create_socketio, get_redis_client
+    
+    socketio = create_socketio(app)
+    redis_client = get_redis_client()
+    
     if env == 'development':
         logging.info("Development environment detected. calling nasdaqapicall from app.py")
         try:
@@ -337,6 +388,12 @@ if __name__ == "__main__":
         except Exception as e:
             logging.error(f"Failed to start the scheduler: {str(e)}")
     
-        app.run(debug=True, use_reloader=False)
+        eventlet.spawn(listen_to_redis)
+        socketio.run(app, debug=True, use_reloader=False)
+        # eventlet.spawn(listen_to_redis)
+        # socketio.run(app, debug=True, use_reloader=False)
+        # socketio.run(app, debug=True, use_reloader=False, host='0.0.0.0', port=5000)
+        # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+
+        # app.run(debug=True, use_reloader=False)
         # app.run(debug=True)
-        
