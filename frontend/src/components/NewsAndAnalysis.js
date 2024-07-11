@@ -6,6 +6,7 @@ import NewsItem from './NewsItem';
 import FlashMessage from './FlashMessage';
 
 const socket = io(axios.defaults.baseURL, { transports: ['websocket'] });
+console.log("axios.defaults.baseURL:", axios.defaults.baseURL);
 // const socket = io('http://localhost:5000', { transports: ['websocket'] });
 // const socket = io('http://localhost:5000'); // Connect to the server where your Flask app is running
 // const socket = io(axios.defaults.baseURL);
@@ -15,9 +16,10 @@ const socket = io(axios.defaults.baseURL, { transports: ['websocket'] });
 //     console.log('Connected to server');
 // });
 
-// socket.on('update_news', (data) => {
-//     console.log('Received news update:', data);
-// });
+socket.on('update_news', function(data) {
+    console.log('Received news update:', data);
+});
+
 
 // socket.on('connect_error', (error) => {
 //     console.error('Connection error:', error);

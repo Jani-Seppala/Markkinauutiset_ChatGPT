@@ -46,10 +46,11 @@ def get_redis_client():
     return redis_client
 
 def create_socketio(app):
-    cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
+    # cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
     # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
+    
     message_queue = None
-    socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins=cors_allowed_origins, message_queue=message_queue)
+    socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", message_queue=message_queue)
     return socketio
 
 def get_flask_pymongo(app):

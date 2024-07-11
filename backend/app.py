@@ -324,43 +324,6 @@ def get_logged_in_user():
         return jsonify({"success": False, "message": "User not found."}), 404
     
 
-# @socketio.on('connect')
-# def test_connect():
-#     print('Client connected')
-#     socketio.emit('response', {'data': 'Connected'})
-    
-    
-
-
-# def message_received_handler(message):
-#     print("New data notification received in handler")
-#     socketio.emit('update_news', {'message': 'New data available'})
-
-# def listen_to_redis():
-#     pubsub = redis_client.pubsub()
-#     pubsub.subscribe('news_channel')
-#     while True:
-#         try:
-#             message = pubsub.get_message()
-#             if message and message['type'] == 'message':
-#                 # print("New data notification received in listen_to_redis")
-#                 print("Emitting 'update_news' with data:", {'message': 'New data available'})
-#                 socketio.emit('update_news', {'message': 'New data available'})
-#         except (redis.ConnectionError, redis.TimeoutError) as e:
-#             logging.error("Redis connection lost: {}. Reconnecting in 5 seconds...".format(str(e)))
-#             time.sleep(5)  # wait before trying to reconnect to Redis
-#         except Exception as e:
-#             logging.error("An error occurred: {}".format(str(e)))
-#             break  # stop the loop if other types of exceptions occur
-
-# def listen_to_redis():
-#     pubsub = redis_client.pubsub()
-#     pubsub.subscribe('news_channel')
-#     for message in pubsub.listen():  # This is a blocking call that listens for messages
-#         if message['type'] == 'message':
-#             data = {'message': message['data']}
-#             socketio.emit('update_news', data)
-
 #used only in development, production has its own redis_listener.py
 def listen_to_redis():
     pubsub = redis_client.pubsub()
