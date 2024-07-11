@@ -32,8 +32,18 @@ def get_redis_client():
     redis_db = int(os.getenv('REDIS_DB'))
     redis_password = os.getenv('REDIS_PASSWORD', None)
     
-    pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
-    return redis.StrictRedis(connection_pool=pool)
+    # pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
+    # return redis.StrictRedis(connection_pool=pool)
+    try:
+        pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
+        redis_client = redis.StrictRedis(connection_pool=pool)
+        redis_client.ping()  # Test the connection
+        logging.info(f"Connected to Redis at {redis_host}:{redis_port}/{redis_db}")
+    except Exception as e:
+        logging.error(f"Failed to connect to Redis: {e}")
+        raise ConnectionError("Failed to connect to Redis")
+    
+    return redis_client
 
 def create_socketio(app):
     cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
