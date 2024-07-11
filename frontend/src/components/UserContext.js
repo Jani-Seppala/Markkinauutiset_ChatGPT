@@ -8,16 +8,22 @@ function useUser() {
 
 function UserProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true); // New state for loading
 
     // Initialize darkMode state based on localStorage or default to false
     const [darkMode, setDarkMode] = useState(() => {
       const storedDarkModePref = localStorage.getItem('darkMode');
       return storedDarkModePref === 'true' ? true : false;
     });
+    const [isSoundOn, setIsSoundOn] = useState(() => {
+      const storedSoundPref = localStorage.getItem('soundPreference');
+      return storedSoundPref === 'true';
+    });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
+    setLoading(false); // Set loading to false after checking the token
   }, []);
 
   useEffect(() => {
@@ -25,9 +31,12 @@ function UserProvider({ children }) {
     localStorage.setItem('darkMode', darkMode);
   }, [darkMode]); // This effect runs when darkMode state changes
 
+  useEffect(() => {
+    localStorage.setItem('soundPreference', isSoundOn);
+  }, [isSoundOn]);
+
   const logout = () => {
     localStorage.removeItem('token');
-    // localStorage.removeItem('token_expires_at');
     localStorage.removeItem('userId');
     setIsLoggedIn(false);
   };
@@ -36,12 +45,17 @@ function UserProvider({ children }) {
     setDarkMode(!darkMode);
   };
 
+  const toggleSound = () => setIsSoundOn(!isSoundOn);
+
   const value = {
     isLoggedIn,
     setIsLoggedIn,
+    loading,
     logout,
     darkMode,
     toggleDarkMode,
+    isSoundOn,
+    toggleSound,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

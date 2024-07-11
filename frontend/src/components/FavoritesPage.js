@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
 import axios from './AxiosSetup'
 import NewsAndAnalysis from './NewsAndAnalysis';
 import './FavoritesPage.css';
@@ -7,12 +6,8 @@ import './FavoritesPage.css';
 function FavoritesPage() {
   const [favorites, setFavorites] = useState([]);
   const token = localStorage.getItem('token');
-  
-  
+
   useEffect(() => {
-    // Fetch the user's current favorites directly with detailed information
-    // axios.get('http://localhost:5000/api/favorites', {
-    // axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, {
       axios.get(`/api/favorites`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -33,7 +28,6 @@ function FavoritesPage() {
     // Update the local state with remaining full stock objects for rendering
     setFavorites(favorites.filter(stock => stock._id !== stockToRemove._id));
     // Update favorites in the backend with remaining stock IDs
-    // axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/favorites`, { favorites: updatedFavoritesIds }, {
     axios.post(`/api/favorites`, { favorites: updatedFavoritesIds }, {
         headers: {
             Authorization: `Bearer ${token}`,

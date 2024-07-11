@@ -1,16 +1,43 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import io from 'socket.io-client';
 import { useLocation } from 'react-router-dom';
-// import axios from 'axios';
 import axios from './AxiosSetup';
 import NewsItem from './NewsItem';
 import FlashMessage from './FlashMessage';
 
-function NewsAndAnalysis({ stockIds, token }) {
+const socket = io(axios.defaults.baseURL, { transports: ['websocket'] });
+// const socket = io('http://localhost:5000', { transports: ['websocket'] });
+// const socket = io('http://localhost:5000'); // Connect to the server where your Flask app is running
+// const socket = io(axios.defaults.baseURL);
+// const socket = io.connect('http://localhost:5000', {transports: ['websocket', 'polling']});
+
+// socket.on('connect', () => {
+//     console.log('Connected to server');
+// });
+
+// socket.on('update_news', (data) => {
+//     console.log('Received news update:', data);
+// });
+
+// socket.on('connect_error', (error) => {
+//     console.error('Connection error:', error);
+// });
+
+function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
     const [newsWithAnalysis, setNewsWithAnalysis] = useState([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const location = useLocation();
+
+    const playNotificationSound = useCallback(() => {
+        console.log("isSoundOn:", isSoundOn);
+        if (isSoundOn) {
+            const sound = new Audio('/notification.mp3');
+            sound.play().catch(error => console.log("Failed to play sound:", error));
+        }
+    }, [isSoundOn]); // Dependency array includes isSoundOn
+    
 
     const fetchNews = useCallback((currentPage, reset = false) => {
         setLoading(true);
@@ -46,6 +73,24 @@ function NewsAndAnalysis({ stockIds, token }) {
         });
     }, [token, stockIds]);
 
+    useEffect(() => {
+        console.log("Setting up socket event listeners");
+        // Only set up the listener if on the front page
+        if (location.pathname === '/') { // Assuming '/' is your front page route
+            console.log("if lauseessa / jälkeen");
+            socket.on('update_news', data => {
+                console.log(data.message);
+                playNotificationSound();
+                fetchNews(1, true);
+            });
+        }
+    
+        return () => {
+            console.log("Cleaning up socket event listeners");
+            socket.off('update_news');
+        };
+    }, [fetchNews, playNotificationSound, location.pathname]); // Add location.pathname to the dependency array
+          
     useEffect(() => {
         fetchNews(1, true); // Fetch the first page and reset the news list
     }, [stockIds, token, fetchNews]);
