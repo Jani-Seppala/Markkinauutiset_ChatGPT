@@ -16,7 +16,7 @@
     "react-select": "^5.8.0",
     "socket.io-client": "^4.7.5",
     "web-vitals": "^2.1.4",
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.0"
+    "@babel/plugin-transform-private-property-in-object": "^7.24.5"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -43,7 +43,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/plugin-transform-private-property-in-object": "^7.24.5"
   }
 }
