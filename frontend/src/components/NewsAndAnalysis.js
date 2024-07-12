@@ -33,6 +33,9 @@ socket.on('connect_error', (error) => {
     console.error('Connection error:', error);
 });
 
+socket.on('error', (error) => {
+    console.error('Error:', error);
+});
 
 
 

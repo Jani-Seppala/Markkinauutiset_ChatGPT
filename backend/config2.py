@@ -50,7 +50,7 @@ def create_socketio(app):
     # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
     
     message_queue = None
-    socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", message_queue=message_queue)
+    socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=message_queue)
     return socketio
 
 def get_flask_pymongo(app):
