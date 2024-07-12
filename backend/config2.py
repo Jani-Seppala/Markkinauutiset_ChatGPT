@@ -12,6 +12,7 @@ def create_app():
     app = Flask(__name__)
     app.config["MONGO_URI"] = os.getenv('MONGODB_URI_PROD') if os.getenv('FLASK_ENV') == 'production' else os.getenv('MONGODB_URI_DEV')
     app.config["SECRET_KEY"] = os.getenv('FLASK_SECRET_KEY')
+    logging.info("Flask app created with MONGO_URI: {} and SECRET_KEY: {}".format(app.config["MONGO_URI"], app.config["SECRET_KEY"]))
     return app
 
 def get_mongo_client():
@@ -50,7 +51,15 @@ def create_socketio(app):
     # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
     
     message_queue = None
-    socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=message_queue)
+    logging.info("Initializing SocketIO with eventlet and CORS settings...")
+    
+    try:
+        socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=message_queue)
+        logging.info("SocketIO initialized successfully with eventlet.")
+    except Exception as e:
+        logging.error("Failed to initialize SocketIO: {}".format(e))
+        raise
+    
     return socketio
 
 def get_flask_pymongo(app):
