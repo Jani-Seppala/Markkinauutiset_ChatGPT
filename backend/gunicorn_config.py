@@ -1,12 +1,12 @@
-import multiprocessing
+# import multiprocessing
 # from config2 import SocketIO
 
 bind = "0.0.0.0:8080"
 workers = 1
 worker_class = 'eventlet'  # Use eventlet worker for WebSocket support
-loglevel = 'info'
-errorlog = '/var/log/mygunicorn_error.log'  # Error log
-accesslog = '/var/log/mygunicorn_access.log'  # Access log
+# loglevel = 'info'
+# errorlog = '/var/log/mygunicorn_error.log'  # Error log
+# accesslog = '/var/log/mygunicorn_access.log'  # Access log
     
 def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
