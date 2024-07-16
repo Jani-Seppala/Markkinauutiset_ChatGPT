@@ -11,7 +11,7 @@ from flask_cors import CORS
 from bson import json_util
 from datetime import timedelta
 # from config2 import create_app, get_flask_pymongo, create_socketio, get_redis_client
-from config2 import create_app, get_flask_pymongo
+from config2 import create_app, get_flask_pymongo, create_socketio
 # import redis
 import bcrypt
 import subprocess
@@ -22,6 +22,7 @@ import time
 
 app = create_app()
 mongo = get_flask_pymongo(app)
+socketio = create_socketio(app)
 
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
@@ -339,12 +340,15 @@ def listen_to_redis():
 if __name__ == "__main__":
     env = os.getenv('FLASK_ENV', 'development')
     
-    from config2 import create_socketio, get_redis_client
+    # from config2 import create_socketio, get_redis_client
     
-    socketio = create_socketio(app)
-    redis_client = get_redis_client()
+    # socketio = create_socketio(app)
+    # redis_client = get_redis_client()
     
     if env == 'development':
+        from config2 import get_redis_client
+        redis_client = get_redis_client()
+        
         logging.info("Development environment detected. calling nasdaqapicall from app.py")
         try:
             subprocess.Popen([sys.executable, '-m', 'apicalls.nasdaqApiCall'])

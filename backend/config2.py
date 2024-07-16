@@ -5,6 +5,7 @@ from flask_pymongo import PyMongo
 from flask import Flask
 import logging
 from flask_socketio import SocketIO
+import urllib.parse
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -32,7 +33,6 @@ def get_redis_client():
     redis_port = int(os.getenv('REDIS_PORT'))
     redis_db = int(os.getenv('REDIS_DB'))
     redis_password = os.getenv('REDIS_PASSWORD', None)
-    
     # pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
     # return redis.StrictRedis(connection_pool=pool)
     try:
@@ -46,16 +46,26 @@ def get_redis_client():
     
     return redis_client
 
-def create_socketio(app):
+def create_socketio(app=None):
     # cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
     # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
+    redis_host = os.getenv('REDIS_HOST', 'localhost')
+    redis_port = int(os.getenv('REDIS_PORT', '6379'))
+    redis_db = int(os.getenv('REDIS_DB', '0'))
+    redis_password = os.getenv('REDIS_PASSWORD', None)
+    encoded_password = urllib.parse.quote_plus(redis_password)
+    # redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
+    redis_url = f"redis://:{encoded_password}@{redis_host}:{redis_port}/{redis_db}"
+    logging.info(redis_url)
     
-    message_queue = None
+    # message_queue = None
+    # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     logging.info("Initializing SocketIO with eventlet and CORS settings...")
     
     try:
-        socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=message_queue)
-        logging.info("SocketIO initialized successfully with eventlet.")
+        # socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=message_queue)
+        socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=redis_url)
+        logging.info("SocketIO initialized successfully with eventlet. and message_queue: {}".format(redis_url))
     except Exception as e:
         logging.error("Failed to initialize SocketIO: {}".format(e))
         raise

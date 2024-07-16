@@ -30,8 +30,9 @@ from config2 import create_app, create_socketio, get_redis_client
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-app = create_app()
-socketio = create_socketio(app)
+# app = create_app()
+# socketio = create_socketio(app)
+socketio = create_socketio()
 redis_client = get_redis_client()
 
 def listen_to_redis():
