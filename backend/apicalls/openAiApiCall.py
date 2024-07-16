@@ -2,6 +2,7 @@ from openai import OpenAI
 import tiktoken
 import os
 import logging
+import time
 
 client = OpenAI()
 
@@ -27,6 +28,7 @@ def load_prompt():
 def analyze_news(news_item, stock_info):
     """Generates an analysis for a given news item and associated stock price data."""
     
+    start_time = time.time()
     # prompt = ""
     try:
         PROMPT = load_prompt()
@@ -50,6 +52,7 @@ def analyze_news(news_item, stock_info):
         logging.info(f"Prompt contains {number_of_tokens} tokens in openAiApiCall.py")
     
         model_used = "gpt-4o"
+        logging.info("Sending request to OpenAI...")
         completion = client.chat.completions.create(
             # model="gpt-3.5-turbo",
             # model="gpt-4-turbo",
@@ -63,11 +66,13 @@ def analyze_news(news_item, stock_info):
 
         # Extract the generated analysis
         analysis_content = completion.choices[0].message.content
+        elapsed_time = time.time() - start_time
+        logging.info(f"Received response from OpenAI in {elapsed_time:.2f} seconds.")
         return analysis_content, prompt, model_used
 
     except Exception as e:
-        # return (f"An error occurred in analyze_news: {str(e)}", prompt)
-        logging.error(f"An error occurred in analyze_news: {str(e)}")
+        elapsed_time = time.time() - start_time
+        logging.error(f"An error occurred in analyze_news after {elapsed_time:.2f} seconds: {e}")
         return (f"An error occurred in analyze_news: {str(e)}", prompt, None)
 
 

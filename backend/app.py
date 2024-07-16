@@ -23,13 +23,13 @@ app = create_app()
 mongo = get_flask_pymongo(app)
 socketio = create_socketio(app)
 
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
+# app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+# app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 # app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=1)
-jwt = JWTManager(app)
+# jwt = JWTManager(app)
 
 # Enable CORS for the entire app
-CORS(app)
+# CORS(app)
 
 # Basic configuration for logging
 logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more verbose output

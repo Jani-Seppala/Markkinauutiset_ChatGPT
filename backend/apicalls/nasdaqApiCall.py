@@ -182,7 +182,8 @@ def fetch_stock_price_and_analyze(news_item):
     # Get analysis from the news with the stock price from openAiApiCall.py
     # analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
     try:
-        if os.environ.get('FLASK_ENV') == 'production':
+        # if os.environ.get('FLASK_ENV') == 'production':
+        if os.environ.get('FLASK_ENV') != 'production':
             analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
         else:
             analysis_content = "This is static analysis content for testing."

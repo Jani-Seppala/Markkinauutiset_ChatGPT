@@ -5,6 +5,9 @@ from flask_pymongo import PyMongo
 from flask import Flask
 import logging
 from flask_socketio import SocketIO
+from flask_jwt_extended import JWTManager
+from datetime import timedelta
+from flask_cors import CORS
 import urllib.parse
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,8 +16,30 @@ def create_app():
     app = Flask(__name__)
     app.config["MONGO_URI"] = os.getenv('MONGODB_URI_PROD') if os.getenv('FLASK_ENV') == 'production' else os.getenv('MONGODB_URI_DEV')
     app.config["SECRET_KEY"] = os.getenv('FLASK_SECRET_KEY')
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
+    JWTManager(app)
+    
+    # Configure CORS based on the environment
+    if os.getenv('FLASK_ENV') == 'production':
+        # cors_origins = ['https://www.yourproductiondomain.com']  # Replace with your production domain
+        cors_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"]
+    else:
+        cors_origins = ['http://localhost:3000']  # Localhost for development
+    
+    # Initialize CORS with more specific settings
+    CORS(app, origins=cors_origins, methods=["GET", "POST", "PUT", "DELETE"], 
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+    
     logging.info("Flask app created with MONGO_URI: {} and SECRET_KEY: {}".format(app.config["MONGO_URI"], app.config["SECRET_KEY"]))
     return app
+
+# def create_app():
+#     app = Flask(__name__)
+#     app.config["MONGO_URI"] = os.getenv('MONGODB_URI_PROD') if os.getenv('FLASK_ENV') == 'production' else os.getenv('MONGODB_URI_DEV')
+#     app.config["SECRET_KEY"] = os.getenv('FLASK_SECRET_KEY')
+#     logging.info("Flask app created with MONGO_URI: {} and SECRET_KEY: {}".format(app.config["MONGO_URI"], app.config["SECRET_KEY"]))
+#     return app
 
 def get_mongo_client():
     mongo_uri = os.getenv('MONGODB_URI_PROD') if os.getenv('FLASK_ENV') == 'production' else os.getenv('MONGODB_URI_DEV')
