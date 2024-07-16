@@ -62,27 +62,6 @@ def fetch_price_before_news(ticker, news_time):
             logging.info(f"First if stock info: {stock_info}")
             return stock_info
         else:
-            # logging.info("No intraday data found, fetching previous close.")
-            # stock_info = stock.info
-            # # stock_info['price_before_news'] = stock.info.get('previousClose')
-            # stock_info['price_before_news'] = stock.info.get('currentPrice')
-            # logging.info(f"Else stock info with current price: {stock_info}")
-            # return stock_info
-            # logging.info("News time not in market open time, fetching previous close.")
-            # stock_info = stock.info
-            # if time_before_news.hour < 9:
-            #     stock_info['price_before_news'] = stock.info.get('previousClose')
-            #     logging.info(f"Stock info with previous close price: {stock_info}")
-            # else:
-            #     current_price = stock.info.get('currentPrice')
-            #     if current_price is not None:
-            #         stock_info['price_before_news'] = current_price
-            #         logging.info(f"Stock info with current price: {stock_info}")
-            #     else:
-            #         stock_info['price_before_news'] = stock.info.get('previousClose')
-            #         logging.info(f"Current price not available. Stock info with previous close price: {stock_info}")
-            # return stock_info
-                        # Timezone for Stockholm
             # Timezone for Stockholm
             stockholm = pytz.timezone('Europe/Stockholm')
             current_time_stockholm = datetime.now(stockholm)
@@ -124,7 +103,7 @@ def main(news_item):
         news_time = pytz.timezone('Europe/Stockholm').localize(news_time)
         
         stock_info = fetch_price_before_news(ticker, news_time)
-        logging.info(f"Stock data for {ticker}: {stock_info}")
+        # logging.info(f"Stock data for {ticker}: {stock_info}")
         
         return stock_info
     except Exception as e:

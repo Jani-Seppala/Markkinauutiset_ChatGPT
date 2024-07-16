@@ -47,7 +47,7 @@ def get_redis_client():
     return redis_client
 
 def create_socketio(app=None):
-    # cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
+    cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"] if os.getenv('FLASK_ENV') == 'production' else ["http://localhost:3000"]
     # message_queue = os.getenv('REDIS_URL', 'redis://localhost:6379') if os.getenv('FLASK_ENV') == 'production' else None
     redis_host = os.getenv('REDIS_HOST', 'localhost')
     redis_port = int(os.getenv('REDIS_PORT', '6379'))
@@ -64,7 +64,8 @@ def create_socketio(app=None):
     
     try:
         # socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=message_queue)
-        socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=redis_url)
+        # socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", logger=True, engineio_logger=True, message_queue=redis_url)
+        socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins=cors_allowed_origins, logger=True, engineio_logger=True, message_queue=redis_url)
         logging.info("SocketIO initialized successfully with eventlet. and message_queue: {}".format(redis_url))
     except Exception as e:
         logging.error("Failed to initialize SocketIO: {}".format(e))

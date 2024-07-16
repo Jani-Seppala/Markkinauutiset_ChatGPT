@@ -1,7 +1,6 @@
 import eventlet
 eventlet.monkey_patch()  # Patch the standard library to be non-blocking
 
-
 from flask import request, redirect, url_for, flash, jsonify, session, send_from_directory
 # from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -31,50 +30,6 @@ jwt = JWTManager(app)
 
 # Enable CORS for the entire app
 CORS(app)
-
-
-
-# if os.getenv('FLASK_ENV') == 'production':
-#     cors_allowed_origins = ["https://www.ainewsanalyzer.com", "https://ainewsanalyzer.com"]  # Example for production
-# else:
-#     cors_allowed_origins = ["http://localhost:3000"]  # Example for development
-
-# Initialize the SocketIO instance and redis client
-# socketio = SocketIO(app, cors_allowed_origins="*")
-# socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
-
-# socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
-# socketio = SocketIO(app, cors_allowed_origins=cors_allowed_origins)
-
-
-# socketio = create_socketio(app)
-# redis_client = get_redis_client()
-
-
-# Determine Redis connection parameters based on the environment
-# if os.getenv('FLASK_ENV') == 'production':
-#     redis_host = os.getenv('REDIS_HOST', 'production_redis_host')  # Use your production Redis host
-#     redis_port = int(os.getenv('REDIS_PORT', 6379))  # Default Redis port or use your production Redis port
-#     redis_db = int(os.getenv('REDIS_DB', 0))  # Default Redis DB or use your production Redis DB
-#     redis_password = os.getenv('REDIS_PASSWORD', None)  # Your production Redis password, if any
-# else:
-#     redis_host = 'localhost'  # Default host for development
-#     redis_port = 6379  # Default port for development
-#     redis_db = 0  # Default DB for development
-#     redis_password = None  # Typically, no password for development
-
-# Initialize the Redis connection pool with dynamic parameters
-# pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, password=redis_password, socket_timeout=5)
-# redis_client = redis.StrictRedis(connection_pool=pool)
-
-# pool = redis.ConnectionPool(host='localhost', port=6379, db=0, socket_timeout=5)
-# redis_client = redis.StrictRedis(connection_pool=pool)
-
-# try:
-#     redis_client.ping()
-#     print("Connected to Redis")
-# except redis.ConnectionError as e:
-#     print("Failed to connect to Redis:", e)
 
 # Basic configuration for logging
 logging.basicConfig(level=logging.INFO,  # You can change this to DEBUG for more verbose output
@@ -340,11 +295,6 @@ def listen_to_redis():
 if __name__ == "__main__":
     env = os.getenv('FLASK_ENV', 'development')
     
-    # from config2 import create_socketio, get_redis_client
-    
-    # socketio = create_socketio(app)
-    # redis_client = get_redis_client()
-    
     if env == 'development':
         from config2 import get_redis_client
         redis_client = get_redis_client()
@@ -357,10 +307,3 @@ if __name__ == "__main__":
     
         eventlet.spawn(listen_to_redis)
         socketio.run(app, debug=True, use_reloader=False)
-        # eventlet.spawn(listen_to_redis)
-        # socketio.run(app, debug=True, use_reloader=False)
-        # socketio.run(app, debug=True, use_reloader=False, host='0.0.0.0', port=5000)
-        # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-
-        # app.run(debug=True, use_reloader=False)
-        # app.run(debug=True)
