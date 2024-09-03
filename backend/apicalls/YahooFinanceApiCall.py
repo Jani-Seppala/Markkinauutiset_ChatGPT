@@ -59,18 +59,16 @@ def fetch_price_before_news(ticker, news_time):
             logging.info(f"Last data before news: {last_data}")
             stock_info = stock.info
             stock_info['price_before_news'] = last_data['Close']
+            stock_info['is_market_hours'] = True
             logging.info(f"First if stock info: {stock_info}")
             return stock_info
         else:
             # Timezone for Stockholm
             stockholm = pytz.timezone('Europe/Stockholm')
             current_time_stockholm = datetime.now(stockholm)
-            # local_time_before_news = time_before_news.astimezone(stockholm)
-            # logging.info(f"Local time before news: {local_time_before_news.strftime('%Y-%m-%d %H:%M:%S')}")
             logging.info(f"Current Stockholm time: {current_time_stockholm.strftime('%Y-%m-%d %H:%M:%S')}")
             market_start = datetime.strptime("09:00", "%H:%M").time()
             market_end = datetime.strptime("17:30", "%H:%M").time()
-            # current_time = local_time_before_news.time()
             current_time = current_time_stockholm.time()
             logging.info(f"Comparing current time {current_time} with market start {market_start} and market end {market_end}")
 
@@ -79,13 +77,21 @@ def fetch_price_before_news(ticker, news_time):
                 current_price = stock_info.get('currentPrice')
                 if current_price is not None:
                     stock_info['price_before_news'] = current_price
+                    stock_info['is_market_hours'] = False
                     logging.info(f"Stock info with current price: {stock_info}")
                 else:
                     stock_info['price_before_news'] = stock_info.get('previousClose')
+                    stock_info['is_market_hours'] = False
                     logging.info(f"Current price not available. Stock info with previous close price: {stock_info}")
             else:
-                stock_info['price_before_news'] = stock_info.get('previousClose')
-                logging.info(f"Stock info with previous close price outside market hours: {stock_info}")
+                if news_time.weekday() in [5, 6]:
+                    stock_info['price_before_news'] = stock_info.get('currentPrice')
+                    stock_info['is_market_hours'] = False
+                    logging.info(f"News time is on a weekend. Stock info with previous close price: {stock_info}")
+                else:
+                    stock_info['price_before_news'] = stock_info.get('previousClose')
+                    stock_info['is_market_hours'] = True
+                    logging.info(f"News time is market hours but there is no transactions so will fetch stock info with previous close price outside market hours: {stock_info}")
             return stock_info
             
             

@@ -2,6 +2,8 @@ import requests
 import datetime
 import pytz
 import time
+# from datetime import datetime, timedelta, time
+# from datetime import timedelta
 from uuid import uuid4
 from bs4 import BeautifulSoup
 import re
@@ -87,15 +89,18 @@ def preprocess_news_items(news_items):
 
 def link_related_news(grouped_news):
     linked_news = {}
+    
     for key, items in grouped_news.items():
-        if len(items) <= 2:
-            # print('LINK RELATED NEWS ENSIMMÄINEN IF')
-            # Directly link items if there are 2 or fewer in the group.
-            # direct_link_key = key + ('DirectLink',)
-            # linked_news[direct_link_key] = {'relatedId': str(uuid4()), 'items': items}
+        # Extract numeric sequences from each disclosureId and check if they are all the same
+        numeric_ids = set(re.search(r'\d+', item['disclosureId']).group() for item in items)
+        # if len(items) <= 2:
+        if len(items) <= 2 or len(numeric_ids) == 1:
+            # Directly link items if there are 2 or fewer in the group or if the disclosureId is the same
+            # logging.info(f"key={key} items={items}")
             linked_news[key] = {'relatedId': str(uuid4()), 'items': items}
         else:
             # ei toimi vielä
+            logging.info(f"key={key} items={items}")
             continue
             # Attempt to group by manager names for items with more than 2 in the group.
             manager_groups = {}
@@ -140,17 +145,76 @@ def link_related_news(grouped_news):
     
     process_and_save_news(linked_news)
 
+# def last_market_close(current_time):
+#     # Define market hours using the correct time constructor
+#     market_open_time = time(9, 0)
+#     market_close_time = time(17, 30)
+
+#     # Handling weekday mornings before the market opens
+#     if current_time.weekday() < 5 and current_time.time() < market_open_time:
+#         # Adjust to the previous day
+#         adjusted_day = current_time - datetime.timedelta(days=1)
+#         # If the adjusted day is Sunday, keep moving back until Friday
+#         while adjusted_day.weekday() > 4:
+#             adjusted_day -= datetime.timedelta(days=1)
+#         return datetime.combine(adjusted_day.date(), market_close_time)
+
+#     # Handling weekday evenings after the market closes
+#     elif current_time.weekday() < 5 and current_time.time() > market_close_time:
+#         return datetime.combine(current_time.date(), market_close_time)
+
+#     # Handling weekends
+#     elif current_time.weekday() >= 5:
+#         # Calculate how many days to subtract to get back to Friday
+#         days_back = current_time.weekday() - 4
+#         last_friday = current_time - datetime.timedelta(days=days_back)
+#         return datetime.combine(last_friday.date(), market_close_time)
+
+#     # During market hours
+#     else:
+#         return datetime.combine(current_time.date(), market_close_time)
+
+def last_market_close(current_time):
+    # Define market hours using the correct time constructor
+    market_open_time = datetime.time(9, 0)
+    market_close_time = datetime.time(17, 30)
+
+    # Handling weekday mornings before the market opens
+    if current_time.weekday() < 5 and current_time.time() < market_open_time:
+        # Adjust to the previous day
+        adjusted_day = current_time - datetime.timedelta(days=1)
+        # If the adjusted day is Sunday, keep moving back until Friday
+        while adjusted_day.weekday() > 4:
+            adjusted_day -= datetime.timedelta(days=1)
+        return datetime.datetime.combine(adjusted_day.date(), market_close_time)
+
+    # Handling weekday evenings after the market closes
+    elif current_time.weekday() < 5 and current_time.time() > market_close_time:
+        return datetime.datetime.combine(current_time.date(), market_close_time)
+
+    # Handling weekends
+    elif current_time.weekday() >= 5:
+        # Calculate how many days to subtract to get back to Friday
+        days_back = current_time.weekday() - 4
+        last_friday = current_time - datetime.timedelta(days=days_back)
+        return datetime.datetime.combine(last_friday.date(), market_close_time)
+
+    # During market hours
+    else:
+        return datetime.datetime.combine(current_time.date(), market_close_time)
+
+
 
 def fetch_stock_price_and_analyze(news_item):
     # Create a unique cache key based on company name and release time
     cache_key = (news_item['company'], news_item['releaseTime'])
-    print(f"{price_cache=} fetch_stock_price_and_analyze eka print")
+    # print(f"{price_cache=} fetch_stock_price_and_analyze eka print")
 
     # Check if data is in cache
     if cache_key in price_cache:
         price_before_news, close_prices = price_cache[cache_key]
-        logging.info("Using cached price data.")
-        logging.info(f"{price_cache=}")
+        # logging.info("Using cached price data.")
+        # logging.info(f"{price_cache=}")
     else:
         try:
             # Fetch stock price from YahooFinanceApicall.py
@@ -160,7 +224,7 @@ def fetch_stock_price_and_analyze(news_item):
             stock_info = fetch_stock_data(news_item)
                 # Store in cache
             price_cache[cache_key] = stock_info
-            logging.info("Fetched new price data and cached it.")
+            # logging.info("Fetched new price data and cached it.")
         except Exception as e:
                 logging.info(f"Error fetching stock data: {e} for {news_item.get('stock_symbol')}")
                 return
@@ -181,25 +245,85 @@ def fetch_stock_price_and_analyze(news_item):
     
     # Get analysis from the news with the stock price from openAiApiCall.py
     # analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
-    try:
-        # if os.environ.get('FLASK_ENV') == 'production':
-        if os.environ.get('FLASK_ENV') != 'production':
-            analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
-        else:
-            analysis_content = "This is static analysis content for testing."
-            prompt = "Static prompt for testing."
-            model_used = "Static model for testing."
+    try:        
+        # if os.environ.get('FLASK_ENV') != 'production':
+        news_narrative = news_item['messageUrlContent']
+        try:
+            if stock_info['is_market_hours'] == False:
+                release_datetime = datetime.datetime.strptime(news_item['releaseTime'], '%Y-%m-%d %H:%M:%S')
+                last_close = last_market_close(release_datetime)
+                
+                off_market_news_query = {
+                    "stock_id": news_item['stock_id'],
+                    "releaseTime": {"$gte": last_close.strftime('%Y-%m-%d %H:%M:%S'), "$lt": news_item['releaseTime']}
+                }
             
+            # off_market_news = list(db.news.find(off_market_news_query))
+            # off_market_news.append(news_item)
+                # Fetch news items
+                try:
+                    off_market_news = [(item['releaseTime'], item['messageUrlContent']) for item in db.news.find(off_market_news_query)]
+                    off_market_news.append((news_item['releaseTime'], news_item['messageUrlContent']))
+                    
+                    # Sort the news items by releaseTime
+                    off_market_news_sorted = sorted(off_market_news, key=lambda x: x[0])
+
+                    # Create a narrative string from sorted news items
+                    news_narrative = "\n\n".join([f"{time}: {content}" for time, content in off_market_news_sorted])
+                except Exception as e:
+                    logging.error(f"Error processing off-market news: {e}")
+        except Exception as e:
+            logging.error(f"Error with off-market news preparation: {e}")
+            
+            
+        analysis_content, news_and_stock_data, model_used, returned_thread_id = analyze_news(news_narrative, stock_info, news_item['thread_id'])
+        # analysis_content, news_and_stock_data, model_used, thread_id = analyze_news(news_item, stock_info)
         analysis_document = {
             "news_id": news_item["_id"],
             "company": news_item['company'],
             "analysis_content": analysis_content,
             "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
-            "prompt": prompt,
+            "news_and_stock_data": news_and_stock_data,
             "model_used": model_used
-        }
+        }                
         
+        existing_stock = db.stocks.find_one({"_id": news_item['stock_id']})
+        existing_thread_id = existing_stock.get('thread_id') if existing_stock else None
+        
+            # Log the current thread_id before updating
+        if existing_thread_id:
+            logging.info(f"Current thread_id for stock_id {news_item['stock_id']}: {existing_thread_id}")
+        else:
+            logging.info(f"No existing thread_id for stock_id {news_item['stock_id']}")
+        
+        
+        logging.info(f"Updating/upserting thread_id for stock_id: {news_item['stock_id']} with thread_id: {returned_thread_id}")
+        # Update the stock document with the new or existing session_id
+        result = db.stocks.update_one(
+        {"_id": news_item['stock_id']},  # Ensure this uses the correct identifier
+        {"$set": {"thread_id": returned_thread_id}},
+        upsert=True  # This ensures that if the stock does not exist, it will create a new document
+        )
+        
+        if result.matched_count > 0:
+            logging.info(f"Updated thread_id for stock_id: {news_item['stock_id']}")
+        if result.upserted_id:
+            logging.info(f"Created new stock document with _id: {result.upserted_id}")
+            
         db.analysis.insert_one(analysis_document)
+            
+        # else:
+        #     analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
+        #     analysis_document = {
+        #         "news_id": news_item["_id"],
+        #         "company": news_item['company'],
+        #         "analysis_content": analysis_content,
+        #         "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
+        #         "prompt": prompt,
+        #         "model_used": model_used
+        #     }
+            
+        #     db.analysis.insert_one(analysis_document)
         
     except Exception as e:
         logging.error(f"Error inserting analysis item into database: {e}")
@@ -246,6 +370,9 @@ def process_and_save_news(linked_news):
             elif item['cnsCategory'] in ['Managers\' transactions', 'Managers\' Transactions', 'Changes in company\'s own shares']:
                 logging.info(f"Skipping news item with ID {unique_id} due to CNS category mismatch. Category: {item['cnsCategory']}")
                 continue
+            elif any(keyword in item['headline'].lower() for keyword in ['share repurchase', 'omien osakkeiden hankinta']):
+                logging.info(f"Skipping news item with ID {unique_id} due to headline content. Headline: {item['headline']}")
+                continue
 
             
             # Check for existing item in both news and unmatched_news collections
@@ -264,6 +391,13 @@ def process_and_save_news(linked_news):
                     item['stock_id'] = stock['_id']
                     item['stock_symbol'] = stock.get('symbol', 'N/A')  # Add the stock symbol to the news item
                     logging.info(f"Matched '{item.get('company')}' with stock '{stock['name']}'")
+                    
+                    # Check for existing openai thread_id session ID
+                    if 'thread_id' in stock:
+                        item['thread_id'] = stock['thread_id']
+                    else:
+                        item['thread_id'] = ''  # Set as empty if no thread_id is found
+                    
                     fetch_stock_price_and_analyze(item)
                 else:
                     logging.info(f"Could not find a match for news item company name '{item.get('company')}' in market '{item.get('market')}'; saved for manual review.")
@@ -329,7 +463,7 @@ def check_and_reschedule():
         print_next_fetch_time(job)
     else:  # Outside market hours
         # job = schedule.every(15).minutes.do(off_market_hours_job)
-        job = schedule.every(2).minutes.do(off_market_hours_job)
+        job = schedule.every(15).minutes.do(off_market_hours_job)
         print_next_fetch_time(job)
 
 
