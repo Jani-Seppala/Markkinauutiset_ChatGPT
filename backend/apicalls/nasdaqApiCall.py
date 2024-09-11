@@ -230,11 +230,11 @@ def fetch_stock_price_and_analyze(news_item):
                 return
             
     
-    if 'price_before_news' in stock_info:
-        news_item['price_before_news'] = stock_info['price_before_news']
-    else:
-        logging.info("Price before news not found in stock info.")
-        return
+    # if 'price_before_news' in stock_info:
+    #     news_item['price_before_news'] = stock_info['price_before_news']
+    # else:
+    #     logging.info("Price before news not found in stock info.")
+    #     return
 
     # Save news item in MongoDB
     try:
@@ -258,8 +258,6 @@ def fetch_stock_price_and_analyze(news_item):
                     "releaseTime": {"$gte": last_close.strftime('%Y-%m-%d %H:%M:%S'), "$lt": news_item['releaseTime']}
                 }
             
-            # off_market_news = list(db.news.find(off_market_news_query))
-            # off_market_news.append(news_item)
                 # Fetch news items
                 try:
                     off_market_news = [(item['releaseTime'], item['messageUrlContent']) for item in db.news.find(off_market_news_query)]
@@ -276,16 +274,19 @@ def fetch_stock_price_and_analyze(news_item):
             logging.error(f"Error with off-market news preparation: {e}")
             
             
-        analysis_content, news_and_stock_data, model_used, returned_thread_id = analyze_news(news_narrative, stock_info, news_item['thread_id'])
-        # analysis_content, news_and_stock_data, model_used, thread_id = analyze_news(news_item, stock_info)
+        analysis_content, news_and_stock_data, stock_price_forecast, model_used, returned_thread_id = analyze_news(news_narrative, stock_info, news_item['thread_id'])
         analysis_document = {
             "news_id": news_item["_id"],
             "company": news_item['company'],
+            "stock_symbol": stock_info.get('symbol', 'N/A'),
             "analysis_content": analysis_content,
+            "stock_price_forecast": stock_price_forecast,
             "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
+            "news_release_time": news_item['releaseTime'],
             "news_and_stock_data": news_and_stock_data,
-            "model_used": model_used
-        }                
+            "model_used": model_used,
+            "price_before_news": stock_info.get('price_before_news', None)
+        }
         
         existing_stock = db.stocks.find_one({"_id": news_item['stock_id']})
         existing_thread_id = existing_stock.get('thread_id') if existing_stock else None
@@ -311,19 +312,6 @@ def fetch_stock_price_and_analyze(news_item):
             logging.info(f"Created new stock document with _id: {result.upserted_id}")
             
         db.analysis.insert_one(analysis_document)
-            
-        # else:
-        #     analysis_content, prompt, model_used = analyze_news(news_item, stock_info)
-        #     analysis_document = {
-        #         "news_id": news_item["_id"],
-        #         "company": news_item['company'],
-        #         "analysis_content": analysis_content,
-        #         "created_at": datetime.datetime.now(pytz.timezone('Europe/Stockholm')).strftime('%Y-%m-%d %H:%M:%S'),
-        #         "prompt": prompt,
-        #         "model_used": model_used
-        #     }
-            
-        #     db.analysis.insert_one(analysis_document)
         
     except Exception as e:
         logging.error(f"Error inserting analysis item into database: {e}")
