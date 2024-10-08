@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import axios from './AxiosSetup';
 import NewsItem from './NewsItem';
 import FlashMessage from './FlashMessage';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 // const socket = io(axios.defaults.baseURL, { transports: ['websocket'] });
 
@@ -13,16 +14,7 @@ const socket = io(axios.defaults.baseURL, {
     reconnectionDelayMax: 10000
 });
 
-
-console.log("axios.defaults.baseURL:", axios.defaults.baseURL);
-// const socket = io('http://localhost:5000', { transports: ['websocket'] });
-// const socket = io('http://localhost:5000'); // Connect to the server where your Flask app is running
-// const socket = io(axios.defaults.baseURL);
-// const socket = io.connect('http://localhost:5000', {transports: ['websocket', 'polling']});
-
-// socket.on('connect', () => {
-//     console.log('Connected to server');
-// });
+// console.log("axios.defaults.baseURL:", axios.defaults.baseURL);
 
 socket.on('update_news', function(data) {
     console.log('Received news update:', data);
@@ -37,14 +29,15 @@ socket.on('error', (error) => {
     console.error('Error:', error);
 });
 
-
-
 function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
     const [newsWithAnalysis, setNewsWithAnalysis] = useState([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [loading, setLoading] = useState(false);
+    // const [loading, setLoading] = useState(false);
     const location = useLocation();
+    const [selectedMarkets, setSelectedMarkets] = useState(['finnish', 'swedish']);
+    const [selectedLanguage, setSelectedLanguage] = useState('english'); // Default to English
+
 
     const playNotificationSound = useCallback(() => {
         console.log("isSoundOn:", isSoundOn);
@@ -54,11 +47,18 @@ function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
         }
     }, [isSoundOn]); // Dependency array includes isSoundOn
     
+    const handleMarketChange = (market) => {
+        setSelectedMarkets(prev => {
+            if (prev.includes(market)) {
+                return prev.filter(m => m !== market);
+            } else {
+                return [...prev, market];
+            }
+        });
+    };
 
     const fetchNews = useCallback((currentPage, reset = false) => {
-        setLoading(true);
-        // const baseUrl = 'http://localhost:5000/api/news-with-analysis';
-        // const baseUrl = `${process.env.REACT_APP_API_BASE_URL}/api/news-with-analysis`;
+        // setLoading(true);
         const baseUrl = `/api/news-with-analysis`; // Use relative URL
         const params = new URLSearchParams({
             page: currentPage
@@ -66,6 +66,10 @@ function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
 
         if (stockIds) {
             params.append('stock_ids', stockIds.join(','));
+        }
+
+        if (selectedMarkets.length > 0) {
+            selectedMarkets.forEach(market => params.append('market', market));
         }
 
         axios.get(`${baseUrl}?${params.toString()}`, {
@@ -82,12 +86,12 @@ function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
 
             setHasMore(response.data.has_more);
             setPage(currentPage + 1); // Increment page if there's more to load
-            setLoading(false);
+            // setLoading(false);
         }).catch(error => {
             console.error("Failed to fetch news", error);
-            setLoading(false);
+            // setLoading(false);
         });
-    }, [token, stockIds]);
+    }, [token, stockIds, selectedMarkets]);
 
     useEffect(() => {
         console.log("Setting up socket event listeners");
@@ -107,38 +111,88 @@ function NewsAndAnalysis({ stockIds, token, isSoundOn }) {
         };
     }, [fetchNews, playNotificationSound, location.pathname]); // Add location.pathname to the dependency array
           
+    
     useEffect(() => {
         fetchNews(1, true); // Fetch the first page and reset the news list
-    }, [stockIds, token, fetchNews]);
+    }, [selectedMarkets, stockIds, token, fetchNews]);
     
 
     // console.log('News item IDs:', newsWithAnalysis.map(({ news }) => news._id));
 
     return (
         <div className="container">
-            <h1 className="text-center mb-4">News and Analysis</h1>
-            {location.state?.message && (
-                <FlashMessage message={location.state.message} type={location.state.type} />
-            )}
-            {loading ? (
-                <p>Loading...</p>
-            ) : (
-                newsWithAnalysis.length === 0 ? (
-                    <p>No news for this company.</p>
-                ) : (
-                    newsWithAnalysis.map(({ news, analysis }, index) => {
-                        // Ensure the key is a string. Access the $oid property if _id is an object.
-                        const keyId = news._id && news._id.$oid ? news._id.$oid : index.toString();
-                        // console.log(`Key for NewsItem ${index}: ${keyId}`); // Check what key is used.
-                        return <NewsItem key={keyId} news={news} analysis={analysis} />;
-                    })
-                )
-            )}
-            {!loading && hasMore && (
-                <button onClick={() => fetchNews(page)} className="btn btn-primary">
-                    Show More
-                </button>
-            )}
+        <h1 className="text-center mb-4">News and Analysis</h1>
+        {location.state?.message && (
+            <FlashMessage message={location.state.message} type={location.state.type} />
+        )}
+        <div>
+            <label>
+            <input
+                type="checkbox"
+                value="finnish"
+                onChange={() => handleMarketChange('finnish')}
+                checked={selectedMarkets.includes('finnish')}
+            />
+            Finnish Markets
+            </label>
+            <label>
+            <input
+                type="checkbox"
+                value="swedish"
+                onChange={() => handleMarketChange('swedish')}
+                checked={selectedMarkets.includes('swedish')}
+            />
+            Swedish Markets
+            </label>
+        </div>
+        <div>
+            <label>
+            <input
+                type="radio"
+                value="english"
+                onChange={() => setSelectedLanguage('english')}
+                checked={selectedLanguage === 'english'}
+            />
+            English
+            </label>
+            <label>
+            <input
+                type="radio"
+                value="finnish"
+                onChange={() => setSelectedLanguage('finnish')}
+                checked={selectedLanguage === 'finnish'}
+            />
+            Finnish
+            </label>
+        </div>
+
+        {newsWithAnalysis.length === 0 ? (
+            <p>No news for this company.</p>
+        ) : (
+            <InfiniteScroll
+            dataLength={newsWithAnalysis.length}
+            next={() => fetchNews(page)}
+            hasMore={hasMore}
+            loader={<h4>Loading...</h4>}
+            endMessage={
+                <p style={{ textAlign: 'center' }}>
+                <b>No more news to display</b>
+                </p>
+            }
+            >
+            {newsWithAnalysis.map(({ news, analysis }, index) => {
+                const keyId = news._id && news._id.$oid ? news._id.$oid : index.toString();
+                return (
+                <NewsItem
+                    key={keyId}
+                    news={news}
+                    analysis={analysis}
+                    selectedLanguage={selectedLanguage}
+                />
+                );
+            })}
+            </InfiniteScroll>
+        )}
         </div>
     );
 }

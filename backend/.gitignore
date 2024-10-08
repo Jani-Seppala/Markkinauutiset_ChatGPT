@@ -4,7 +4,6 @@ logs/
 __pycache__/
 apicalls/__pycache__/
 apicalls/yfinance.cache
-apicalls/fetchClosingPricesFromYahooToMongo.py
 *.pyc
 run_nasdaqApiCall.sh
 prompt.txt

@@ -213,72 +213,187 @@ def get_stock(stockId):
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
 
 
+# @app.route('/api/news-with-analysis', methods=['GET'])
+# def get_news_with_analysis():
+#     stock_id = request.args.get('stock_id')
+#     stock_ids = request.args.get('stock_ids')
+#     markets = request.args.getlist('market')
+#     page = int(request.args.get('page', 1))
+#     limit = 10
+#     actual_fetch_limit = limit + 1
+#     # Adjust the skip to account for the extra news item
+#     skip = (page - 1) * limit
+    
+#     print(f"{limit=}")
+#     print(f"{skip=}")
+
+#     # Build the query based on the provided parameters
+#     if stock_id:
+#         # Fetch news for the specified stock, sorted by releaseTime
+#         query = {"stock_id": ObjectId(stock_id)}
+#     elif stock_ids:
+#         # Fetch news for multiple specified stocks, sorted by releaseTime
+#         stock_ids_list = stock_ids.split(',')
+#         stock_object_ids = [ObjectId(id) for id in stock_ids_list]
+#         query = {"stock_id": {"$in": stock_object_ids}}
+#     else:
+#         # Fetch all news, sorted by releaseTime
+#         query = {}
+
+#     if markets:
+#         # Map 'finnish' and 'swedish' to actual market names
+#         market_mapping = {
+#             'finnish': ["First North Finland", "Main Market, Helsinki"],
+#             'swedish': ["First North Sweden", "Main Market, Stockholm"]
+#         }
+#         actual_markets = []
+#         for m in markets:
+#             actual_markets.extend(market_mapping.get(m, []))
+#         query["market"] = {"$in": actual_markets}
+
+#     # Apply the query, sorting, pagination, and conversion to a list
+#     news_items = list(mongo.db.news.find(query).sort([
+#         ('releaseTime', -1), 
+#         ("company", 1), 
+#         ("_id", 1)
+#     ]).skip(skip).limit(actual_fetch_limit))
+    
+#     print(f"Page: {page}, Limit: {limit}, Skip: {skip}")
+#     print("News IDs returned:", [item['_id'] for item in news_items])
+    
+#     has_more = len(news_items) > limit  # Check if there are more items than the limit
+#     displayed_items = news_items[:limit]  # Only send 'limit' items to the frontend
+
+#     result = [{
+#         "news": item,
+#         "analysis": mongo.db.analysis.find_one({"news_id": item["_id"]})
+#     } for item in displayed_items]
+        
+        
+#     print(f"{len(result)} result pituus")
+    
+#     result_json = json_util.dumps({"items": result, "has_more": has_more})
+#     return app.response_class(response=result_json, mimetype='application/json')
+
+
+# @app.route('/api/users/me', methods=['GET'])
+# @jwt_required()
+# def get_logged_in_user():
+#     user_id = get_jwt_identity()
+#     user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+
+#     if user:
+#         # Convert ObjectId to string
+#         user['_id'] = str(user['_id'])
+#         # Remove the password before returning the user data
+#         user.pop('password')
+#         return jsonify({"success": True, "user": user})
+#     else:
+#         return jsonify({"success": False, "message": "User not found."}), 404
+
+
 @app.route('/api/news-with-analysis', methods=['GET'])
 def get_news_with_analysis():
     stock_id = request.args.get('stock_id')
     stock_ids = request.args.get('stock_ids')
+    markets = request.args.getlist('market')
     page = int(request.args.get('page', 1))
-    limit = 15
+    limit = 10
     actual_fetch_limit = limit + 1
-    # Adjust the skip to account for the extra news item
     skip = (page - 1) * limit
-    
+
     print(f"{limit=}")
     print(f"{skip=}")
 
     # Build the query based on the provided parameters
     if stock_id:
-        # Fetch news for the specified stock, sorted by releaseTime
+        # Fetch news for the specified stock
         query = {"stock_id": ObjectId(stock_id)}
     elif stock_ids:
-        # Fetch news for multiple specified stocks, sorted by releaseTime
+        # Fetch news for multiple specified stocks
         stock_ids_list = stock_ids.split(',')
         stock_object_ids = [ObjectId(id) for id in stock_ids_list]
         query = {"stock_id": {"$in": stock_object_ids}}
     else:
-        # Fetch all news, sorted by releaseTime
+        # Fetch all news
         query = {}
 
-    # Apply the query, sorting, pagination, and conversion to a list
-    news_items = list(mongo.db.news.find(query).sort([
-        ('releaseTime', -1), 
-        ("company", 1), 
-        ("_id", 1)
-    ]).skip(skip).limit(actual_fetch_limit))
-    
+    if markets:
+        # Map 'finnish' and 'swedish' to actual market names
+        market_mapping = {
+            'finnish': ["First North Finland", "Main Market, Helsinki"],
+            'swedish': ["First North Sweden", "Main Market, Stockholm"]
+        }
+        actual_markets = []
+        for m in markets:
+            actual_markets.extend(market_mapping.get(m, []))
+        query["market"] = {"$in": actual_markets}
+
+    # Use aggregation pipeline to group by 'relatedId' and remove duplicates
+    pipeline = [
+        {'$match': query},
+        {'$sort': {'releaseTime': -1, 'company': 1, '_id': 1}},
+        {'$group': {
+            '_id': '$relatedId',  # Group by 'relatedId'
+            'news_item': {'$first': '$$ROOT'}  # Take the first document in each group
+        }},
+        {'$sort': {
+            'news_item.releaseTime': -1,
+            'news_item.company': 1,
+            'news_item._id': 1
+        }},
+        {'$skip': skip},
+        {'$limit': actual_fetch_limit}
+    ]
+
+
+    # TRY THIS PIPELINE IF THERE IS PROBLEM WITH THE CURRENT ONE!!!
+    # pipeline = [
+    #     {'$match': query},
+    #     {'$sort': {'releaseTime': -1, 'company': 1, '_id': 1}},
+    #     {'$group': {
+    #         '_id': {
+    #             '$ifNull': [
+    #                 '$relatedId',
+    #                 {
+    #                     '$ifNull': [
+    #                         '$disclosureId',
+    #                         {'company': '$company', 'headline': '$headline', 'releaseTime': '$releaseTime'}
+    #                     ]
+    #                 }
+    #             ]
+    #         },
+    #         'news_item': {'$first': '$$ROOT'}
+    #     }},
+    #     {'$sort': {
+    #         'news_item.releaseTime': -1,
+    #         'news_item.company': 1,
+    #         'news_item._id': 1
+    #     }},
+    #     {'$skip': skip},
+    #     {'$limit': actual_fetch_limit}
+    # ]
+
+
+    # Execute the aggregation pipeline
+    aggregated_news = list(mongo.db.news.aggregate(pipeline))
+
     print(f"Page: {page}, Limit: {limit}, Skip: {skip}")
-    print("News IDs returned:", [item['_id'] for item in news_items])
-    
-    has_more = len(news_items) > limit  # Check if there are more items than the limit
-    displayed_items = news_items[:limit]  # Only send 'limit' items to the frontend
+    print("News IDs returned:", [item['news_item']['_id'] for item in aggregated_news])
+
+    has_more = len(aggregated_news) > limit  # Check if there are more items than the limit
+    displayed_items = aggregated_news[:limit]  # Only send 'limit' items to the frontend
 
     result = [{
-        "news": item,
-        "analysis": mongo.db.analysis.find_one({"news_id": item["_id"]})
+        "news": item['news_item'],
+        "analysis": mongo.db.analysis.find_one({"news_id": item['news_item']['_id']})
     } for item in displayed_items]
-        
-        
+
     print(f"{len(result)} result pituus")
-    
+
     result_json = json_util.dumps({"items": result, "has_more": has_more})
     return app.response_class(response=result_json, mimetype='application/json')
 
-
-@app.route('/api/users/me', methods=['GET'])
-@jwt_required()
-def get_logged_in_user():
-    user_id = get_jwt_identity()
-    user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
-
-    if user:
-        # Convert ObjectId to string
-        user['_id'] = str(user['_id'])
-        # Remove the password before returning the user data
-        user.pop('password')
-        return jsonify({"success": True, "user": user})
-    else:
-        return jsonify({"success": False, "message": "User not found."}), 404
-    
 
 #used only in development, production has its own redis_listener.py
 def listen_to_redis():
@@ -307,3 +422,4 @@ if __name__ == "__main__":
     
         eventlet.spawn(listen_to_redis)
         socketio.run(app, debug=True, use_reloader=False)
+        # socketio.run(app, debug=True, use_reloader=True)
