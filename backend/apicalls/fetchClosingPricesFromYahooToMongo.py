@@ -171,7 +171,7 @@ def process_analysis():
                     # Update prices for each analysis in current_group
                     for group_analysis in current_group:
                         print(f'Updating analysis id: {group_analysis["_id"]} with prices: {closing_price}, {high_price}, {low_price}')
-                        update_database_with_prices(group_analysis['_id'], closing_price, high_price, low_price)
+                        # update_database_with_prices(group_analysis['_id'], closing_price, high_price, low_price)
                         sleep(15)
                     current_group = []
                 # Now process the current in-market analysis individually
@@ -180,7 +180,7 @@ def process_analysis():
                     next_analysis_time = sorted_analyses[i+1]['news_release_time_dt'] - datetime.timedelta(minutes=1)
                 closing_price, high_price, low_price = fetch_stock_data(symbol, news_time, next_analysis_time)
                 print(f'Updating analysis id: {analysis["_id"]} with prices: {closing_price}, {high_price}, {low_price}')
-                update_database_with_prices(analysis['_id'], closing_price, high_price, low_price)
+                # update_database_with_prices(analysis['_id'], closing_price, high_price, low_price)
                 sleep(15)
             else:
                 current_group.append(analysis)
@@ -197,7 +197,7 @@ def process_analysis():
             # Update prices for each analysis in current_group
             for group_analysis in current_group:
                 print(f'Updating analysis id: {group_analysis["_id"]} with prices: {closing_price}, {high_price}, {low_price}')
-                update_database_with_prices(group_analysis['_id'], closing_price, high_price, low_price)
+                # update_database_with_prices(group_analysis['_id'], closing_price, high_price, low_price)
                 sleep(15)
 
 
@@ -210,7 +210,8 @@ def fetch_analyses(start_time, end_time):
         "news_release_time": {
             "$gte": start_time_str,
             "$lt": end_time_str
-        }
+        },
+        "stock_symbol": {"$regex": r"\.HE$"}
     })
     
     analysis_list = list(analyses)
@@ -218,27 +219,59 @@ def fetch_analyses(start_time, end_time):
     return analysis_list
 
 def update_database_with_prices(analysis_id, closing_price, high_price, low_price):
-    
-    update_document = {
-        "$push": {
-            "prices": {
-                "$each": [
-                    {"type": "closing_price", "value": closing_price},
-                    {"type": "high_price", "value": high_price},
-                    {"type": "low_price", "value": low_price}
-                ]
+    # Fetch the existing price types for the analysis
+    existing_analysis = db['analysis'].find_one({"_id": analysis_id})
+    existing_types = [price.get('type') for price in existing_analysis.get('prices', [])]
+
+    # Prepare the list of prices to add, excluding types already present
+    prices_to_add = []
+    if "closing_price" not in existing_types:
+        prices_to_add.append({"type": "closing_price", "value": closing_price})
+    if "high_price" not in existing_types:
+        prices_to_add.append({"type": "high_price", "value": high_price})
+    if "low_price" not in existing_types:
+        prices_to_add.append({"type": "low_price", "value": low_price})
+
+    if prices_to_add:
+        update_document = {
+            "$push": {
+                "prices": {
+                    "$each": prices_to_add
+                }
             }
         }
-    }
+        
+        try:
+            result = db['analysis'].update_one({"_id": analysis_id}, update_document)
+            if result.modified_count > 0:
+                logging.info(f"Successfully updated analysis ID {analysis_id} with new price data.")
+            else:
+                logging.warning(f"No matching document found with ID {analysis_id}, or no changes made.")
+        except Exception as e:
+            logging.error(f"Failed to update analysis ID {analysis_id}: {e}")
+    else:
+        logging.info(f"Analysis ID {analysis_id} already has all price types, skipping update.")
     
-    try:
-        result = db['analysis'].update_one({"_id": analysis_id}, update_document)
-        if result.matched_count > 0:
-            logging.info(f"Successfully updated analysis ID {analysis_id} with new price data.")
-        else:
-            logging.warning(f"No matching document found with ID {analysis_id}.")
-    except Exception as e:
-        logging.error(f"Failed to update analysis ID {analysis_id}: {e}")
+    # update_document = {
+    #     "$push": {
+    #         "prices": {
+    #             "$each": [
+    #                 {"type": "closing_price", "value": closing_price},
+    #                 {"type": "high_price", "value": high_price},
+    #                 {"type": "low_price", "value": low_price}
+    #             ]
+    #         }
+    #     }
+    # }
+    
+    # try:
+    #     result = db['analysis'].update_one({"_id": analysis_id}, update_document)
+    #     if result.matched_count > 0:
+    #         logging.info(f"Successfully updated analysis ID {analysis_id} with new price data.")
+    #     else:
+    #         logging.warning(f"No matching document found with ID {analysis_id}.")
+    # except Exception as e:
+    #     logging.error(f"Failed to update analysis ID {analysis_id}: {e}")
         
 
 if __name__ == "__main__":
